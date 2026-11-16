@@ -1,0 +1,89 @@
+// The on-screen keyboard: each letter shows the best colour it has had in this
+// player's rows (green over yellow over grey); typing fills the guess's cells.
+
+export const KEY_ROWS = [
+  ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
+  ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
+  ["ENTER", "Z", "X", "C", "V", "B", "N", "M", "BACKSPACE"],
+];
+
+const RANK = { absent: 1, present: 2, correct: 3 };
+
+// rows: [{ word, colors }] -> { [letter]: "correct" | "present" | "absent" }
+export function letterStates(rows) {
+  const states = {};
+  for (const { word, colors } of rows) {
+    if (!word) continue;
+    [...word].forEach((letter, i) => {
+      const color = colors[i];
+      if ((RANK[color] ?? 0) > (RANK[states[letter]] ?? 0)) states[letter] = color;
+    });
+  }
+  return states;
+}
+
+// The guess being typed: one cell per letter (null when empty) and a cursor, so
+// letters can go in any cell, in any order, with gaps.
+// guess = { cells: [letter | null], cursor }
+export const emptyGuess = (length) => ({ cells: Array(length).fill(null), cursor: 0 });
+
+// The same guess for a word of this length, or a fresh one if the length changed.
+export const fitGuess = (guess, length) => (guess?.cells.length === length ? guess : emptyGuess(length));
+
+// The guessed word, or null while a cell is empty.
+export const guessWord = ({ cells }) => (cells.length > 0 && cells.every(Boolean) ? cells.join("") : null);
+
+const clamp = (n, cells) => Math.max(0, Math.min(cells.length - 1, n));
+
+// The first empty cell after `from`, wrapping round; -1 if none is empty.
+function nextEmpty(cells, from) {
+  for (let step = 1; step <= cells.length; step++) {
+    const i = (from + step) % cells.length;
+    if (!cells[i]) return i;
+  }
+  return -1;
+}
+
+// Put the cursor on a cell (tapped or clicked).
+export const selectCell = (guess, index) => ({ ...guess, cursor: clamp(index, guess.cells) });
+
+// One key on the guess. key: a letter, "ENTER", "BACKSPACE", "SPACE", "LEFT" or
+// "RIGHT" (physical keys already mapped by keyFromEvent). -> { guess, submit }
+//  - a letter fills the cursor's cell and moves to the next empty one (or stays);
+//  - SPACE moves on one cell without writing;
+//  - BACKSPACE clears the cursor's cell, or if it was empty, the one before;
+//  - LEFT / RIGHT move the cursor;
+//  - ENTER asks to send (the caller checks the guess is full).
+export function editGuess(guess, key) {
+  const { cells, cursor } = guess;
+  if (key === "ENTER") return { guess, submit: true };
+  if (key === "LEFT") return { guess: { cells, cursor: clamp(cursor - 1, cells) }, submit: false };
+  if (key === "RIGHT" || key === "SPACE") return { guess: { cells, cursor: clamp(cursor + 1, cells) }, submit: false };
+  if (key === "BACKSPACE") {
+    const at = cells[cursor] || cursor === 0 ? cursor : cursor - 1;
+    const next = [...cells];
+    next[at] = null;
+    return { guess: { cells: next, cursor: at }, submit: false };
+  }
+  if (/^[A-Z]$/.test(key)) {
+    const next = [...cells];
+    next[cursor] = key;
+    const empty = nextEmpty(next, cursor);
+    return { guess: { cells: next, cursor: empty === -1 ? cursor : empty }, submit: false };
+  }
+  return { guess, submit: false };
+}
+
+// A physical key, as the on-screen keyboard names it, or null. Accented letters
+// count as the plain one (é is E, ç is C), as the server compares words.
+export function keyFromEvent(evt) {
+  if (evt.ctrlKey || evt.metaKey || evt.altKey) return null;
+  if (evt.key === "Enter") return "ENTER";
+  if (evt.key === "Backspace") return "BACKSPACE";
+  if (evt.key === " ") return "SPACE";
+  if (evt.key === "ArrowLeft") return "LEFT";
+  if (evt.key === "ArrowRight") return "RIGHT";
+  if (evt.key.length !== 1) return null;
+  const letter = evt.key.normalize("NFD").replace(/\p{Diacritic}/gu, "").toUpperCase();
+  return /^[A-Z]$/.test(letter) ? letter : null;
+}
