@@ -39,3 +39,14 @@ npm run preview  # serve o build
 ## Endereço
 
 Produção: https://adivinha-palavra.onrender.com. Convites são `https://adivinha-palavra.onrender.com/?code=ABCDE`.
+
+## Deploy (Render)
+
+Static site no plano gratuito, descrito no `render.yaml` (Blueprint). O serviço se chama `adivinha-palavra`, sem o sufixo `-front` do repositório, porque o nome do serviço define o endereço.
+
+1. Crie um token fine-grained no GitHub, só leitura (`Contents: Read`), com acesso apenas ao `arcade-hub-ui`. O mesmo token serve para todos os sites do Recreio.
+2. No Render: New → Blueprint, escolha este repositório e informe o `GITHUB_TOKEN` quando for pedido.
+3. Confira o endereço gerado. Tem que ser exatamente `https://adivinha-palavra.onrender.com`. Se o Render acrescentar um sufixo (`adivinha-palavra-xxxx`), apague o serviço e crie de novo com o nome `adivinha-palavra-jogo`. Nesse caso, atualize o `GAME_URLS` no `arcade-hub-ui` e o `CORS_ORIGIN` do `arcade-hub-back`.
+4. A origem do site precisa estar no `CORS_ORIGIN` do `arcade-hub-back`.
+
+O build roda `npm ci && npm run build` com `VITE_SERVER_URL=https://arcade-hub-back.onrender.com` e publica `dist/`. Cada push no `main` gera um novo deploy.
