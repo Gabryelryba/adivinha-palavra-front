@@ -4,7 +4,7 @@
   import { socket } from "arcade-hub-ui/socket.js";
   import { keepScreenAwake, allowScreenSleep } from "arcade-hub-ui/wakeLock.js";
   import { inviteUrl } from "arcade-hub-ui/invite.js";
-  import GameMenu from "arcade-hub-ui/GameMenu.svelte";
+  import GameLanding from "arcade-hub-ui/GameLanding.svelte";
   import ResultSheet from "arcade-hub-ui/ResultSheet.svelte";
   import { startHint } from "arcade-hub-ui/lobbyText.js";
   import Preview from "./Preview.svelte";
@@ -18,7 +18,7 @@
   import { letterStates, keyFromEvent, emptyGuess, fitGuess, guessWord, selectCell, editGuess } from "./keyboardState.js";
   import { outcomeText, nameOf } from "./round.js";
   import { ranking, headline, rematchVote } from "./result.js";
-  import { t, serverMessage, currentLanguage } from "arcade-hub-ui/i18n/index.svelte.js";
+  import { t, tList, serverMessage, currentLanguage } from "arcade-hub-ui/i18n/index.svelte.js";
 
   const GAME_ID = "guess-word";
   // Seats in the waiting room, as on the server (games/<id> in arcade-hub-back).
@@ -28,11 +28,11 @@
 
   // Props come from GameApp (arcade-hub-ui), which mounts the game.
   let {
-    onExit,
     inviteCode: invitedTo = null,
     onInviteUsed = () => {},
-    onSwitchGame = () => false,
+    playerName = null,
     ensureName = async () => null,
+    editName = null,
   } = $props();
 
   let status = $state("connecting"); // connecting | menu | joining | lobby | playing | ended
@@ -152,11 +152,9 @@
     }
   }
 
+  // A code from another game's room is refused by the server as room-not-found.
   function handleJoinError(refusal) {
-    const { gameId } = refusal;
-    // The code belongs to another game in the hub: open that game with it.
-    if (gameId && gameId !== GAME_ID && onSwitchGame(gameId, roomCode)) return;
-    joinError = gameId && gameId !== GAME_ID ? t("errors.join.other-game") : serverMessage("join", refusal);
+    joinError = serverMessage("join", refusal);
     status = "menu";
     showJoinForm = true;
   }
@@ -311,14 +309,15 @@
     }
   }
 
-  // Leaving a live match takes the player out of it, so it takes a second tap.
+  // Leave goes back to the landing page. Leaving a live match takes the player
+  // out of it, so it takes a second tap.
   function handleBack() {
     if (status === "playing" && !confirmLeave) {
       confirmLeave = true;
       setTimeout(() => (confirmLeave = false), 3500);
       return;
     }
-    onExit();
+    leaveRoom();
   }
 
   // A key on the guess: letters go in the cursor's cell, in any order (DG-65).
@@ -380,39 +379,44 @@
 </script>
 
 <main class="screen" class:in-game={inMatch}>
-  <header class="topbar">
-    <button
-      class="btn btn-ghost back"
-      class:btn-danger={confirmLeave}
-      onclick={handleBack}
-      aria-label={confirmLeave ? t("guessWord.leaveMatchAria") : t("common.backToHub")}
-    >
-      <ArrowLeft size={18} weight="light" aria-hidden="true" />
-      <span>{confirmLeave ? t("guessWord.leaveMatch") : "Recreio"}</span>
-    </button>
-    {#if inMatch && round && round.phase !== "over"}
-      <span class="round-label">{t("guessWord.round.label", { n: round.number, total: game.rounds })}</span>
-      <Timer endsAt={round.endsAt} {offset} total={phaseSeconds} />
-    {:else if inRoom}
-      <span class="game-name" translate="no">{t("games.guess-word.name")}</span>
-    {/if}
-  </header>
+  {#if inRoom}
+    <header class="topbar">
+      <button
+        class="btn btn-ghost back"
+        class:btn-danger={confirmLeave}
+        onclick={handleBack}
+        aria-label={confirmLeave ? t("guessWord.leaveMatchAria") : t("guessWord.leaveAria")}
+      >
+        <ArrowLeft size={18} weight="light" aria-hidden="true" />
+        <span>{confirmLeave ? t("guessWord.leaveMatch") : t("guessWord.leave")}</span>
+      </button>
+      {#if inMatch && round && round.phase !== "over"}
+        <span class="round-label">{t("guessWord.round.label", { n: round.number, total: game.rounds })}</span>
+        <Timer endsAt={round.endsAt} {offset} total={phaseSeconds} />
+      {:else if inRoom}
+        <span class="game-name" translate="no">{t("guessWord.name")}</span>
+      {/if}
+    </header>
+  {/if}
 
   {#if status === "menu" || status === "connecting"}
-    <GameMenu
+    <GameLanding
       gameId={GAME_ID}
       eyebrow={t("guessWord.eyebrow")}
-      title={t("games.guess-word.name")}
+      title={t("guessWord.name")}
       lede={t("guessWord.lede")}
+      steps={tList("guessWord.steps")}
       connecting={status === "connecting"}
       {slowServer}
       bind:joinError
       bind:showJoinForm
       onCreate={createRoom}
       onJoin={sendJoin}
+      {playerName}
+      onEditName={editName}
     >
       {#snippet art()}<Preview />{/snippet}
-    </GameMenu>
+    </GameLanding>
   {:else if status === "joining" || (status === "lobby" && !lobby)}
     <section class="center-state" aria-busy="true">
       <p class="status-line" role="status" aria-live="polite">

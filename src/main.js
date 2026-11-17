@@ -7,7 +7,7 @@ import GuessWord from "./guess-word/GuessWord.svelte";
 
 // The game's own texts first: the page reads them as soon as it mounts.
 registerMessages(messages);
-document.title = t("games.guess-word.name");
+document.title = t("guessWord.name");
 
 const app = mount(GameApp, {
   target: document.getElementById("app"),
