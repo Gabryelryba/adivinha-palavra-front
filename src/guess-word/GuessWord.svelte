@@ -24,7 +24,8 @@
   // Seats in the waiting room, as on the server (games/<id> in arcade-hub-back).
   const rules = { minPlayers: 2, maxPlayers: 5 };
   const CHOOSE_SECONDS = 45;
-  const REVEAL_SECONDS = 8;
+  // The scores between rounds last as long as the server says (round.endsAt - round.startedAt).
+  const REVEAL_FALLBACK_SECONDS = 15;
 
   // Props come from GameApp (arcade-hub-ui), which mounts the game.
   let {
@@ -209,7 +210,12 @@
     if (status === "playing" || status === "ended") say(t("guessWord.playerLeft", { name }), 3500);
   }
 
+  // The last kind of move sent, to tell what a refusal answers.
+  let lastMove = null;
+
   function handleMoveRejected(refusal) {
+    // "I have seen the scores" arriving after the round moved on: nothing to say.
+    if (lastMove === "next") return;
     const message = serverMessage("move", refusal);
     pending = false;
     if (game?.round.phase === "choosing" && game.round.chooser === playerIndex) {
@@ -333,6 +339,7 @@
       return;
     }
     pending = true;
+    lastMove = "guess";
     socket.emit("move", { type: "guess", word });
   }
 
@@ -342,7 +349,13 @@
 
   function choose(word) {
     chooseError = "";
+    lastMove = "choose";
     socket.emit("move", { type: "choose", word });
+  }
+
+  function moveOn() {
+    lastMove = "next";
+    socket.emit("move", { type: "next" });
   }
 
   const inRoom = $derived(status === "lobby" || status === "playing" || status === "ended" || status === "joining");
@@ -357,7 +370,13 @@
   );
   const keyStates = $derived(letterStates(mine.rows));
   const phaseSeconds = $derived(
-    round?.phase === "choosing" ? CHOOSE_SECONDS : round?.phase === "reveal" ? REVEAL_SECONDS : (game?.roundTime ?? 120)
+    round?.phase === "choosing"
+      ? CHOOSE_SECONDS
+      : round?.phase === "reveal"
+        ? round.endsAt && round.startedAt
+          ? Math.round((round.endsAt - round.startedAt) / 1000)
+          : REVEAL_FALLBACK_SECONDS
+        : (game?.roundTime ?? 120)
   );
 
   const statusText = $derived.by(() => {
@@ -474,7 +493,7 @@
 
 {#if inMatch && round?.phase === "reveal"}
   {#key round.number}
-    <RoundScore view={game} players={seats} me={playerIndex} {offset} />
+    <RoundScore view={game} players={seats} me={playerIndex} {offset} onNext={moveOn} />
   {/key}
 {/if}
 

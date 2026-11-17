@@ -98,6 +98,11 @@ const en = {
       next: "{name} picks next · {seconds} s",
       youNext: "You pick next · {seconds} s",
       finalIn: "Final result in {seconds} s",
+      // The button to move on: everyone taps it, or the clock runs out.
+      chooseWord: "Choose the Word",
+      nextRound: "Next Round",
+      seeResults: "See Results",
+      waiting: "Waiting for the others · {n} of {m}",
     },
 
     // Where a player's points came from, one reason per item (round.breakdown).
@@ -223,6 +228,11 @@ const ptBR = {
       next: "{name} escolhe a próxima · {seconds} s",
       youNext: "Você escolhe a próxima · {seconds} s",
       finalIn: "Resultado final em {seconds} s",
+      // O botão para seguir: todo mundo toca, ou o tempo acaba.
+      chooseWord: "Escolher a Palavra",
+      nextRound: "Próxima Rodada",
+      seeResults: "Ver Resultado",
+      waiting: "Esperando os outros · {n} de {m}",
     },
 
     // De onde vieram os pontos de cada jogador, um motivo por item (round.breakdown).
