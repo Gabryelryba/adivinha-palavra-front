@@ -100,6 +100,27 @@ const en = {
       finalIn: "Final result in {seconds} s",
     },
 
+    // Where a player's points came from, one reason per item (round.breakdown).
+    breakdown: {
+      solved: "Guessed it +{points}",
+      triesLeft: { one: "1 try left +{points}", other: "{count} tries left +{points}" },
+      speed: "Speed +{points}",
+      green: { one: "1 green +{points}", other: "{count} greens +{points}" },
+      yellow: { one: "1 yellow +{points}", other: "{count} yellows +{points}" },
+      chooserTries: "Guessed on try {count} +{points}",
+      chooserHeld: "Held out {count} s +{points}",
+      chooserCap: "Capped at {count}",
+      nobodyGuessed: "Nobody guessed it · 0",
+    },
+
+    // The legend under the scores; the numbers come from the server (scoring).
+    scoring: {
+      title: "How scoring works",
+      solver: "Whoever guesses it: {solved}, plus {perTryLeft} per try left, plus up to {speedMax} for speed.",
+      others: "Everyone else guessing: {green} per green and {yellow} per yellow, from their best row.",
+      chooser: "Whoever picked the word: {chooserPerTry} per try the guesser needed, plus 1 for every {chooserPerSeconds} s it held out, up to {chooserMax}. Nobody guessed it: 0.",
+    },
+
     result: {
       pointsOf: "{score} points.",
     },
@@ -202,6 +223,27 @@ const ptBR = {
       next: "{name} escolhe a próxima · {seconds} s",
       youNext: "Você escolhe a próxima · {seconds} s",
       finalIn: "Resultado final em {seconds} s",
+    },
+
+    // De onde vieram os pontos de cada jogador, um motivo por item (round.breakdown).
+    breakdown: {
+      solved: "Acertou +{points}",
+      triesLeft: { one: "1 tentativa sobrando +{points}", other: "{count} tentativas sobrando +{points}" },
+      speed: "Rapidez +{points}",
+      green: { one: "1 verde +{points}", other: "{count} verdes +{points}" },
+      yellow: { one: "1 amarela +{points}", other: "{count} amarelas +{points}" },
+      chooserTries: "Acertaram na {count}ª tentativa +{points}",
+      chooserHeld: "Resistiu {count} s +{points}",
+      chooserCap: "Limite de {count}",
+      nobodyGuessed: "Ninguém acertou · 0",
+    },
+
+    // A legenda embaixo do placar; os números vêm do servidor (scoring).
+    scoring: {
+      title: "Como a pontuação funciona",
+      solver: "Quem acerta: {solved}, mais {perTryLeft} por tentativa que sobra, mais até {speedMax} pela rapidez.",
+      others: "Quem não acerta: {green} por letra verde e {yellow} por amarela, da melhor linha.",
+      chooser: "Quem escolheu a palavra: {chooserPerTry} por tentativa de quem acertou, mais 1 a cada {chooserPerSeconds} s que a palavra resistiu, até {chooserMax}. Ninguém acertou: 0.",
     },
 
     result: {

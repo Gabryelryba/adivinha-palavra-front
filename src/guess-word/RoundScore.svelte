@@ -3,12 +3,13 @@
   import Check from "phosphor-svelte/lib/Check";
   import PencilSimple from "phosphor-svelte/lib/PencilSimple";
   import Avatar from "arcade-hub-ui/Avatar.svelte";
-  import { outcomeText, roundScores, upcomingChoosers, nameOf, secondsLeft } from "./round.js";
+  import { outcomeText, roundScores, upcomingChoosers, nameOf, secondsLeft, breakdownLine, scoringLines } from "./round.js";
   import { t } from "arcade-hub-ui/i18n/index.svelte.js";
 
   // Between rounds: the word turns over letter by letter, each player's bar grows
   // to their new total while the number counts up from the old one, with this
-  // round's points beside it; then who picks next, and when.
+  // round's points beside it and where they came from; the scoring rules; then
+  // who picks next, and when.
   let { view, players, me, offset } = $props();
 
   const rows = $derived(roundScores(view, players));
@@ -79,6 +80,9 @@
               {#if row.gained > 0}<span class="gain">+{row.gained}</span>{/if}
               <span class="total">{shown(row)}</span>
             </span>
+            {#if breakdownLine(row.breakdown)}
+              <span class="why">{breakdownLine(row.breakdown)}</span>
+            {/if}
             <span class="track" aria-hidden="true">
               <span class="fill" style:transform="scaleX({(grown ? row.total : row.before) / top})"></span>
             </span>
@@ -86,6 +90,17 @@
         </li>
       {/each}
     </ol>
+
+    {#if view.scoring}
+      <details class="rules">
+        <summary>{t("guessWord.scoring.title")}</summary>
+        <ul>
+          {#each scoringLines(view.scoring) as line, i (i)}
+            <li>{line}</li>
+          {/each}
+        </ul>
+      </details>
+    {/if}
 
     <p class="next" aria-live="polite">
       {#if next === undefined}
@@ -196,7 +211,7 @@
 
   .score-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.6rem;
     padding: 0.35rem 0.5rem;
     border-radius: 0.9rem;
@@ -210,6 +225,43 @@
       opacity: 0;
       transform: translateY(8px);
     }
+  }
+
+  /* The reasons for a player's points: small, and free to wrap on a phone. */
+  .why {
+    font-size: 0.78rem;
+    line-height: 1.35;
+    color: var(--ink-muted);
+    text-wrap: pretty;
+  }
+
+  .rules {
+    margin: 0.1rem 0 0.2rem;
+    font-size: 0.82rem;
+    color: var(--ink-muted);
+  }
+
+  .rules summary {
+    cursor: pointer;
+    width: fit-content;
+    min-height: 2.75rem;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    color: var(--accent-text);
+    border-radius: var(--radius-sm);
+  }
+
+  .rules summary:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .rules ul {
+    margin: 0 0 0.4rem;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.3rem;
   }
 
   .score-row.me {
