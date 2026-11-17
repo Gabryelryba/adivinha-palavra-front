@@ -1,5 +1,5 @@
 import { describe, test, expect, afterEach } from "vitest";
-import { secondsLeft, formatClock, upcomingChoosers, outcomeText, roundScores } from "./round.js";
+import { secondsLeft, formatClock, upcomingChoosers, outcomeText, roundScores, breakdownText, breakdownLine, scoringLines } from "./round.js";
 import { headline } from "./result.js";
 import { setLanguage } from "arcade-hub-ui/i18n/index.svelte.js";
 
@@ -85,5 +85,56 @@ describe("the final headline", () => {
     const end = view({ phase: "over" }, { winners: [0] });
     const gone = [players[0], { ...players[1], left: true }, { ...players[2], left: true }];
     expect(headline(end, gone, 0).detail).toBe("Everyone else left the match.");
+  });
+});
+
+describe("where the points came from", () => {
+  const solver = [
+    { kind: "solved", points: 100 },
+    { kind: "triesLeft", count: 3, points: 45 },
+    { kind: "speed", count: 30, points: 25 },
+  ];
+
+  test("each reason in words, singular and plural", () => {
+    expect(breakdownLine(solver)).toBe("Guessed it +100 · 3 tries left +45 · Speed +25");
+    expect(breakdownText({ kind: "triesLeft", count: 1, points: 15 })).toBe("1 try left +15");
+    expect(breakdownText({ kind: "green", count: 2, points: 10 })).toBe("2 greens +10");
+    expect(breakdownText({ kind: "yellow", count: 1, points: 2 })).toBe("1 yellow +2");
+    expect(breakdownText({ kind: "chooserCap", count: 150, points: -30 })).toBe("Capped at 150");
+    expect(breakdownText({ kind: "nobodyGuessed", points: 0 })).toBe("Nobody guessed it · 0");
+  });
+
+  test("in Portuguese", () => {
+    setLanguage("pt-BR");
+    expect(breakdownLine(solver)).toBe("Acertou +100 · 3 tentativas sobrando +45 · Rapidez +25");
+    expect(breakdownText({ kind: "chooserTries", count: 3, points: 60 })).toBe("Acertaram na 3ª tentativa +60");
+    expect(breakdownText({ kind: "chooserHeld", count: 60, points: 20 })).toBe("Resistiu 60 s +20");
+  });
+
+  test("a reason this site does not know is left out", () => {
+    expect(breakdownLine([{ kind: "bonus", points: 5 }, { kind: "speed", points: 3 }])).toBe("Speed +3");
+  });
+
+  test("each row carries its reasons, adding up to what it gained", () => {
+    const rows = roundScores(
+      view({ phase: "reveal", solvedBy: 0, points: [170, 50, 15], breakdown: [solver, [{ kind: "chooserTries", count: 3, points: 50 }], [{ kind: "green", count: 3, points: 15 }]] }),
+      players
+    );
+    for (const row of rows) expect(row.breakdown.reduce((s, i) => s + i.points, 0)).toBe(row.gained);
+  });
+
+  test("an older server sends no reasons: empty lists, no legend", () => {
+    const rows = roundScores(view({ phase: "reveal", points: [10, 0, 5] }), players);
+    expect(rows.every((r) => r.breakdown.length === 0)).toBe(true);
+    expect(scoringLines(undefined)).toEqual([]);
+  });
+
+  test("the legend reads its numbers from the server", () => {
+    const scoring = { solved: 100, perTryLeft: 15, speedMax: 50, green: 5, yellow: 2, chooserPerTry: 20, chooserPerSeconds: 3, chooserMax: 150 };
+    const [solverLine, othersLine, chooserLine] = scoringLines(scoring);
+    expect(solverLine).toBe("Whoever guesses it: 100, plus 15 per try left, plus up to 50 for speed.");
+    expect(othersLine).toContain("5 per green and 2 per yellow");
+    expect(chooserLine).toContain("up to 150");
+    expect(scoringLines({ ...scoring, solved: 120 })[0]).toContain("120");
   });
 });

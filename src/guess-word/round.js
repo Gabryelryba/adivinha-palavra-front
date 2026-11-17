@@ -33,7 +33,7 @@ export function outcomeText(view, players, me) {
 
 // Everyone still in the match (and anyone who scored this round), highest total
 // first, with where their total stood before this round.
-// -> [{ index, name, color, left, before, gained, total, solved, chose }]
+// -> [{ index, name, color, left, before, gained, total, solved, chose, breakdown }]
 export function roundScores(view, players) {
   const points = view.round.points ?? [];
   return view.order
@@ -49,7 +49,25 @@ export function roundScores(view, players) {
         total,
         solved: view.round.solvedBy === seat,
         chose: view.round.chooser === seat,
+        breakdown: view.round.breakdown?.[seat] ?? [],
       };
     })
     .sort((a, b) => b.total - a.total);
+}
+
+// One reason for a player's points, in the current language ("3 tries left
+// +45"); "" for a kind this site does not know yet.
+export function breakdownText({ kind, count, points }) {
+  const key = `guessWord.breakdown.${kind}`;
+  const text = t(key, { count, points });
+  return text === key ? "" : text;
+}
+
+// A player's reasons on one line.
+export const breakdownLine = (items) => items.map(breakdownText).filter(Boolean).join(" · ");
+
+// The rules for the legend, from the server's `scoring`; [] when it sent none.
+export function scoringLines(scoring) {
+  if (!scoring) return [];
+  return ["solver", "others", "chooser"].map((key) => t(`guessWord.scoring.${key}`, scoring));
 }
