@@ -101,7 +101,7 @@
   }
 
   .cell.cursor {
-    border: 2px solid var(--accent);
+    border: 2px solid var(--focus);
     background: var(--accent-soft);
   }
 

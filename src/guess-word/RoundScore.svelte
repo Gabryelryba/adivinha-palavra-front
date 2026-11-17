@@ -104,7 +104,7 @@
     position: fixed;
     inset: 0;
     z-index: 40;
-    background: linear-gradient(to bottom, rgba(3, 6, 13, 0.35), rgba(3, 6, 13, 0.8));
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--scrim) 45%, transparent), var(--scrim));
     pointer-events: none;
     animation: fade 0.4s var(--ease-spring);
   }
@@ -124,7 +124,7 @@
     max-height: calc(100dvh - 1.5rem);
     overflow: auto;
     translate: -50% 0;
-    background: rgba(11, 15, 26, 0.78);
+    background: var(--scrim);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     animation: rise 0.6s var(--ease-spring);
@@ -200,7 +200,7 @@
     gap: 0.6rem;
     padding: 0.35rem 0.5rem;
     border-radius: 0.9rem;
-    background: rgba(207, 224, 255, 0.03);
+    background: var(--sheen);
     animation: row-in 0.5s var(--ease-spring) backwards;
     animation-delay: calc(300ms + var(--n) * 70ms);
   }
@@ -213,7 +213,7 @@
   }
 
   .score-row.me {
-    background: rgba(207, 224, 255, 0.06);
+    background: var(--sheen-strong);
   }
 
   .body {

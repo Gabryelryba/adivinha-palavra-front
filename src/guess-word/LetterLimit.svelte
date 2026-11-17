@@ -133,11 +133,11 @@
 
   .switch[aria-checked="true"] {
     color: var(--ink);
-    border-color: rgba(0, 108, 240, 0.45);
+    border-color: var(--accent-line);
   }
 
   .switch:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--focus);
     outline-offset: 2px;
   }
 
@@ -180,7 +180,7 @@
     padding: 0.4rem 0.9rem;
     border-radius: 999px;
     background: var(--accent-soft);
-    border: 1px solid rgba(0, 108, 240, 0.45);
+    border: 1px solid var(--accent-line);
     color: var(--ink);
     font-weight: 600;
     font-size: 0.92rem;
@@ -190,7 +190,7 @@
   @keyframes chip-in {
     from {
       transform: scale(0.88);
-      background: rgba(0, 108, 240, 0.45);
+      background: var(--accent-line);
     }
   }
 
