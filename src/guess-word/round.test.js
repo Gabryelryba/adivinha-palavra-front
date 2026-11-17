@@ -1,5 +1,5 @@
 import { describe, test, expect, afterEach } from "vitest";
-import { secondsLeft, formatClock, upcomingChoosers, outcomeText, roundScores, breakdownText, breakdownLine, scoringLines } from "./round.js";
+import { secondsLeft, formatClock, upcomingChoosers, outcomeText, roundScores, breakdownText, breakdownLine, scoringLines, nextButton } from "./round.js";
 import { headline } from "./result.js";
 import { setLanguage } from "arcade-hub-ui/i18n/index.svelte.js";
 
@@ -136,5 +136,39 @@ describe("where the points came from", () => {
     expect(othersLine).toContain("5 per green and 2 per yellow");
     expect(chooserLine).toContain("up to 150");
     expect(scoringLines({ ...scoring, solved: 120 })[0]).toContain("120");
+  });
+});
+
+describe("the button to move on", () => {
+  // order [1, 2, 0]: this round Caetano (1) chose, Lívia (2) picks next, then Iara (0).
+  const reveal = (round = {}, extra) => view({ phase: "reveal", chooser: 1, ready: [], ...round }, extra);
+
+  test("whoever picks next is asked to choose the word; the others go to the next round", () => {
+    expect(nextButton(reveal(), players, 2).label).toBe("Choose the Word");
+    expect(nextButton(reveal(), players, 0).label).toBe("Next Round");
+  });
+
+  test("after the last round it leads to the results", () => {
+    expect(nextButton(reveal({ chooser: 0 }), players, 1).label).toBe("See Results");
+  });
+
+  test("after tapping it waits, counting only who is still in the match", () => {
+    const left = players.map((p) => (p.index === 2 ? { ...p, left: true } : p));
+    const b = nextButton(reveal({ ready: [0, 2] }), left, 0);
+    expect(b.waiting).toBe(true);
+    expect(b.readyCount).toBe(1);
+    expect(b.total).toBe(2);
+    expect(nextButton(reveal({ ready: [0] }), players, 1).waiting).toBe(false);
+  });
+
+  test("an older server without round.ready gets no button", () => {
+    expect(nextButton(view({ phase: "reveal" }), players, 0).available).toBe(false);
+  });
+
+  test("in Portuguese", () => {
+    setLanguage("pt-BR");
+    expect(nextButton(reveal(), players, 2).label).toBe("Escolher a Palavra");
+    expect(nextButton(reveal(), players, 0).label).toBe("Próxima Rodada");
+    expect(nextButton(reveal({ chooser: 0 }), players, 1).label).toBe("Ver Resultado");
   });
 });

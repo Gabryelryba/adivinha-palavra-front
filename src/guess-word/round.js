@@ -71,3 +71,27 @@ export function scoringLines(scoring) {
   if (!scoring) return [];
   return ["solver", "others", "chooser"].map((key) => t(`guessWord.scoring.${key}`, scoring));
 }
+
+// The button under the scores. The next round starts once everyone still in the
+// match has tapped it (or when the clock runs out), so after tapping it waits.
+// -> { available, label, waiting, readyCount, total }; available is false when
+// the server does not support it (no round.ready).
+export function nextButton(view, players, me) {
+  const ready = view.round.ready;
+  const here = view.order.filter((seat) => !players[seat]?.left);
+  const upcoming = upcomingChoosers(view, players);
+  const label =
+    upcoming.length === 0
+      ? t("guessWord.reveal.seeResults")
+      : upcoming[0] === me
+        ? t("guessWord.reveal.chooseWord")
+        : t("guessWord.reveal.nextRound");
+  const readyCount = Array.isArray(ready) ? ready.filter((seat) => here.includes(seat)).length : 0;
+  return {
+    available: Array.isArray(ready),
+    label,
+    waiting: Array.isArray(ready) && ready.includes(me),
+    readyCount,
+    total: here.length,
+  };
+}

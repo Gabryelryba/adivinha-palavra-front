@@ -3,18 +3,29 @@
   import Check from "phosphor-svelte/lib/Check";
   import PencilSimple from "phosphor-svelte/lib/PencilSimple";
   import Avatar from "arcade-hub-ui/Avatar.svelte";
-  import { outcomeText, roundScores, upcomingChoosers, nameOf, secondsLeft, breakdownLine, scoringLines } from "./round.js";
+  import { outcomeText, roundScores, upcomingChoosers, nameOf, secondsLeft, breakdownLine, scoringLines, nextButton } from "./round.js";
   import { t } from "arcade-hub-ui/i18n/index.svelte.js";
 
   // Between rounds: the word turns over letter by letter, each player's bar grows
   // to their new total while the number counts up from the old one, with this
   // round's points beside it and where they came from; the scoring rules; then
   // who picks next, and when.
-  let { view, players, me, offset } = $props();
+  // onNext: this player has seen the scores (the round moves on once everyone has).
+  let { view, players, me, offset, onNext = () => {} } = $props();
 
   const rows = $derived(roundScores(view, players));
   const top = $derived(Math.max(1, ...rows.map((r) => r.total)));
   const next = $derived(upcomingChoosers(view, players)[0]);
+  const button = $derived(nextButton(view, players, me));
+  // Tapped here, before the server's next state says so.
+  let tapped = $state(false);
+  const waiting = $derived(tapped || button.waiting);
+
+  function moveOn() {
+    if (waiting) return;
+    tapped = true;
+    onNext();
+  }
   const word = $derived(view.round.word ?? "");
 
   const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -100,6 +111,14 @@
           {/each}
         </ul>
       </details>
+    {/if}
+
+    {#if button.available}
+      <div class="move-on" aria-live="polite">
+        <button class="btn btn-primary" onclick={moveOn} disabled={waiting}>
+          {waiting ? t("guessWord.reveal.waiting", { n: Math.max(button.readyCount, 1), m: button.total }) : button.label}
+        </button>
+      </div>
     {/if}
 
     <p class="next" aria-live="polite">
@@ -233,6 +252,15 @@
     line-height: 1.35;
     color: var(--ink-muted);
     text-wrap: pretty;
+  }
+
+  .move-on {
+    display: grid;
+    margin-top: 0.3rem;
+  }
+
+  .move-on .btn {
+    width: 100%;
   }
 
   .rules {
