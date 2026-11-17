@@ -8,6 +8,16 @@ const en = {
   },
 
   guessWord: {
+    name: "Guess Word",
+    leave: "Leave",
+    leaveAria: "Leave the room and go back to the start",
+    // "How to play" on the landing page, read with tList().
+    steps: [
+      { title: "Create a room and send the link", text: "From 2 to 5 players. In the waiting room the host picks the time per round, the language and the longest word allowed." },
+      { title: "One player picks the secret word", text: "Each round someone else chooses. Everyone gets to choose once, in an order drawn at the start." },
+      { title: "Everyone else guesses", text: "Six tries each. Green is the right letter in the right place, yellow is in the word but elsewhere, grey is not in the word." },
+      { title: "Points for being quick", text: "Guessing with fewer tries and faster scores more, and the chooser scores while the word holds out. Most points wins." },
+    ],
     eyebrow: "Group Wordle · 2 to 5 players",
     lede: "Each round one player picks a secret word and everyone else races to guess it, six tries each. The first right guess ends the round. Everyone picks once; the most points wins.",
     leaveMatch: "Leave the Match?",
@@ -102,6 +112,16 @@ const ptBR = {
   },
 
   guessWord: {
+    name: "Adivinha Palavra",
+    leave: "Sair",
+    leaveAria: "Sair da sala e voltar para o início",
+    // "How to play" on the landing page, read with tList().
+    steps: [
+      { title: "Crie a sala e mande o link", text: "De 2 a 5 jogadores. Na sala de espera, o anfitrião escolhe o tempo de cada rodada, o idioma e o tamanho máximo da palavra." },
+      { title: "Um jogador escolhe a palavra secreta", text: "A cada rodada escolhe uma pessoa diferente. Todo mundo escolhe uma vez, numa ordem sorteada no começo." },
+      { title: "Os outros tentam adivinhar", text: "Seis tentativas para cada um. Verde é letra certa no lugar certo, amarelo é letra que está em outro lugar, cinza é letra que não está na palavra." },
+      { title: "Rapidez vale pontos", text: "Quem acerta com menos tentativas e mais rápido marca mais, e quem escolheu marca enquanto a palavra resiste. Vence quem somar mais pontos." },
+    ],
     eyebrow: "Wordle em grupo · 2 a 5 jogadores",
     lede: "A cada rodada, um jogador escolhe uma palavra secreta e os outros correm para adivinhar, com seis tentativas cada. O primeiro acerto encerra a rodada. Todo mundo escolhe uma vez; vence quem fizer mais pontos.",
     leaveMatch: "Sair da Partida?",

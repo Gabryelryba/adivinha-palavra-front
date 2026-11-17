@@ -1,5 +1,5 @@
 <script>
-  // The hub card and menu art: three guesses closing in on a word, the tiles
+  // The landing page art: three guesses closing in on a word, the tiles
   // turning one by one. CSS only; still under "reduce motion".
   const ROWS = [
     { word: "PLUMA", colors: ["absent", "present", "absent", "absent", "present"] },
