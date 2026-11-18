@@ -3,9 +3,33 @@
 
 export const KEY_ROWS = [
   ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
-  ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
-  ["ENTER", "Z", "X", "C", "V", "B", "N", "M", "BACKSPACE"],
+  ["A", "S", "D", "F", "G", "H", "J", "K", "L", "BACKSPACE"],
+  ["Z", "X", "C", "V", "B", "N", "M", "ENTER"],
 ];
+
+// Where each key sits on a grid of 32 columns: a letter takes 3; each row starts
+// one column further in than the one above, as on a real keyboard; Delete closes
+// the second row and a wide Enter the third, both at the right edge.
+// -> [{ key, row, column, span }] (1-based, for grid-row / grid-column)
+export const GRID_COLUMNS = 32;
+const WIDE = { BACKSPACE: { column: 30, span: 3 }, ENTER: { column: 25, span: 8 } };
+
+export function keyGrid() {
+  return KEY_ROWS.flatMap((keys, r) => {
+    let column = r + 1;
+    return keys.map((key) => {
+      if (WIDE[key]) return { key, row: r + 1, ...WIDE[key] };
+      const cell = { key, row: r + 1, column, span: 3 };
+      column += 3;
+      return cell;
+    });
+  });
+}
+
+// How long the newest row takes to turn over on the board (Board.svelte: each
+// tile flips for 500 ms, 90 ms after the one before). The keys change colour
+// after that, so they do not give the answer away before the tiles do.
+export const revealDelay = (length) => Math.max(0, length - 1) * 90 + 500;
 
 const RANK = { absent: 1, present: 2, correct: 3 };
 
