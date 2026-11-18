@@ -47,8 +47,10 @@ export function letterStates(rows) {
 }
 
 // The guess being typed: one cell per letter (null when empty) and a cursor, so
-// letters can go in any cell, in any order, with gaps.
-// guess = { cells: [letter | null], cursor }
+// letters can go in any cell, in any order, with gaps. Once every cell is full
+// the cursor is null: no cell is active and further letters are ignored, until
+// Delete or a tap on a cell.
+// guess = { cells: [letter | null], cursor: index | null }
 export const emptyGuess = (length) => ({ cells: Array(length).fill(null), cursor: 0 });
 
 // The same guess for a word of this length, or a fresh one if the length changed.
@@ -73,14 +75,29 @@ export const selectCell = (guess, index) => ({ ...guess, cursor: clamp(index, gu
 
 // One key on the guess. key: a letter, "ENTER", "BACKSPACE", "SPACE", "LEFT" or
 // "RIGHT" (physical keys already mapped by keyFromEvent). -> { guess, submit }
-//  - a letter fills the cursor's cell and moves to the next empty one (or stays);
+//  - a letter fills the cursor's cell and moves to the next empty one, wrapping
+//    round; with no empty cell left the cursor becomes null;
 //  - SPACE moves on one cell without writing;
 //  - BACKSPACE clears the cursor's cell, or if it was empty, the one before;
 //  - LEFT / RIGHT move the cursor;
 //  - ENTER asks to send (the caller checks the guess is full).
+// With the cursor null (a full row): letters do nothing, BACKSPACE clears the
+// last cell and puts the cursor there, LEFT goes to the last cell and RIGHT or
+// SPACE to the first.
 export function editGuess(guess, key) {
   const { cells, cursor } = guess;
   if (key === "ENTER") return { guess, submit: true };
+  if (cursor === null) {
+    const last = cells.length - 1;
+    if (key === "BACKSPACE") {
+      const next = [...cells];
+      next[last] = null;
+      return { guess: { cells: next, cursor: last }, submit: false };
+    }
+    if (key === "LEFT") return { guess: { cells, cursor: last }, submit: false };
+    if (key === "RIGHT" || key === "SPACE") return { guess: { cells, cursor: 0 }, submit: false };
+    return { guess, submit: false };
+  }
   if (key === "LEFT") return { guess: { cells, cursor: clamp(cursor - 1, cells) }, submit: false };
   if (key === "RIGHT" || key === "SPACE") return { guess: { cells, cursor: clamp(cursor + 1, cells) }, submit: false };
   if (key === "BACKSPACE") {
@@ -93,7 +110,7 @@ export function editGuess(guess, key) {
     const next = [...cells];
     next[cursor] = key;
     const empty = nextEmpty(next, cursor);
-    return { guess: { cells: next, cursor: empty === -1 ? cursor : empty }, submit: false };
+    return { guess: { cells: next, cursor: empty === -1 ? null : empty }, submit: false };
   }
   return { guess, submit: false };
 }

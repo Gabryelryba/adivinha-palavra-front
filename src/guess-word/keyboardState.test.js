@@ -38,7 +38,7 @@ describe("the guess being typed", () => {
   const show = ({ cells, cursor }) => cells.map((c, i) => (i === cursor ? `[${c ?? "_"}]` : (c ?? "_"))).join("");
 
   test("letters in order fill left to right", () => {
-    expect(show(type(emptyGuess(4), "G", "A", "T", "O"))).toBe("GAT[O]");
+    expect(show(type(emptyGuess(4), "G", "A", "T", "O"))).toBe("GATO");
     expect(guessWord(type(emptyGuess(4), "G", "A", "T", "O"))).toBe("GATO");
   });
 
@@ -49,13 +49,40 @@ describe("the guess being typed", () => {
     g = type(g, "O");
     expect(show(g), "wraps round to the first empty cell").toBe("[_]__RO");
     g = type(g, "C", "A", "S");
-    expect(show(g)).toBe("CA[S]RO");
+    expect(show(g), "the last empty cell filled: no cursor").toBe("CASRO");
     expect(guessWord(g)).toBe("CASRO");
   });
 
-  test("with every cell full the cursor stays where it wrote", () => {
-    const g = type(selectCell(type(emptyGuess(3), "A", "B", "C"), 1), "X");
-    expect(show(g)).toBe("A[X]C");
+  test("a full row has no cursor, and more letters change nothing", () => {
+    const full = type(emptyGuess(3), "A", "B", "C");
+    expect(full.cursor).toBe(null);
+    expect(type(full, "X")).toEqual(full);
+    expect(guessWord(full)).toBe("ABC");
+  });
+
+  test("on a full row, a tapped cell takes a letter and the cursor goes again", () => {
+    const g = selectCell(type(emptyGuess(3), "A", "B", "C"), 1);
+    expect(show(g)).toBe("A[B]C");
+    expect(show(type(g, "X"))).toBe("AXC");
+    expect(type(g, "X").cursor).toBe(null);
+  });
+
+  test("on a full row, delete clears the last cell and puts the cursor there", () => {
+    const full = type(emptyGuess(3), "A", "B", "C");
+    expect(show(type(full, "BACKSPACE"))).toBe("AB[_]");
+  });
+
+  test("on a full row, arrows bring the cursor back: left at the end, right and space at the start", () => {
+    const full = type(emptyGuess(3), "A", "B", "C");
+    expect(show(type(full, "LEFT"))).toBe("AB[C]");
+    expect(show(type(full, "RIGHT"))).toBe("[A]BC");
+    expect(show(type(full, "SPACE"))).toBe("[A]BC");
+  });
+
+  test("a guess with no cursor still fits and still sends", () => {
+    const full = type(emptyGuess(4), "G", "A", "T", "O");
+    expect(fitGuess(full, 4)).toBe(full);
+    expect(editGuess(full, "ENTER").submit).toBe(true);
   });
 
   test("space skips a cell without writing, and stops at the end", () => {
