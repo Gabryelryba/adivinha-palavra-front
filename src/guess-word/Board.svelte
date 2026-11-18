@@ -3,8 +3,9 @@
 
   // This player's six rows: the guesses so far (letters and colours), the one
   // being typed, then empty rows. The tiles fill the space the board is given.
-  // guess: the row being typed ({ cells, cursor }, see keyboardState.js); its
-  // cells are buttons, so a tap puts the cursor there (onSelect).
+  // guess: the row being typed ({ cells, cursor }, see keyboardState.js; cursor
+  // is null once the row is full); its cells are buttons, so a tap puts the
+  // cursor there (onSelect).
   // shake: bump it to shake the typing row (a refused or short word).
   let { rows = [], length, guess = null, maxTries = 6, active = false, shake = 0, onSelect = () => {} } = $props();
 
@@ -100,9 +101,10 @@
     transition: border-color 0.2s var(--ease-spring);
   }
 
+  /* The active cell: a thick bar under it. A full row has none (cursor null). */
   .cell.cursor {
-    border: 2px solid var(--focus);
-    background: var(--accent-soft);
+    border-bottom-width: 0.25em;
+    border-bottom-color: var(--surface-raised);
   }
 
   .cell:focus-visible {
