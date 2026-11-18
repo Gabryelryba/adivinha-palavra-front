@@ -15,7 +15,7 @@
   import OthersProgress from "./OthersProgress.svelte";
   import Timer from "./Timer.svelte";
   import RoundScore from "./RoundScore.svelte";
-  import { letterStates, keyFromEvent, emptyGuess, fitGuess, guessWord, selectCell, editGuess } from "./keyboardState.js";
+  import { letterStates, keyFromEvent, emptyGuess, fitGuess, guessWord, selectCell, editGuess, revealDelay } from "./keyboardState.js";
   import { outcomeText, nameOf } from "./round.js";
   import { ranking, headline, rematchVote } from "./result.js";
   import { t, tList, serverMessage, currentLanguage } from "arcade-hub-ui/i18n/index.svelte.js";
@@ -369,6 +369,28 @@
     status === "playing" && round?.phase === "guessing" && !amChooser && mine.tries < (game?.maxTries ?? 6) && !pending
   );
   const keyStates = $derived(letterStates(mine.rows));
+  // The keys show a new row's colours only once its tiles have turned over.
+  // Compared as text, so the many states other players' moves bring do not
+  // restart the wait.
+  const keySignature = $derived(JSON.stringify(keyStates));
+  const myRowCount = $derived(mine.rows.length);
+  let shownKeyStates = $state({});
+  let shownRowCount = 0;
+  const calm = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  $effect(() => {
+    const next = JSON.parse(keySignature);
+    const count = myRowCount;
+    if (calm || count <= shownRowCount) {
+      shownKeyStates = next;
+      shownRowCount = count;
+      return;
+    }
+    const timer = setTimeout(() => {
+      shownKeyStates = next;
+      shownRowCount = count;
+    }, revealDelay(wordLength));
+    return () => clearTimeout(timer);
+  });
   const phaseSeconds = $derived(
     round?.phase === "choosing"
       ? CHOOSE_SECONDS
@@ -479,7 +501,7 @@
           {shake}
           onSelect={selectGuessCell}
         />
-        <Keyboard states={keyStates} disabled={!canGuess} onKey={pressKey} />
+        <Keyboard states={shownKeyStates} disabled={!canGuess} onKey={pressKey} />
       {/if}
     </section>
   {:else}

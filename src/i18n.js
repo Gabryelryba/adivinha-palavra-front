@@ -78,13 +78,20 @@ const en = {
       solved: "{name} got it.",
       youSolved: "You got it.",
       keyboard: "Keyboard",
-      enter: "Enter",
+      enter: "ENTER",
       backspace: "Delete",
       yourBoard: "Your guesses",
       others: "Other players",
       progress: "{name}: {count} of 6 tries",
       cellEmpty: "Cell {n} of {total}, empty",
       cellLetter: "Cell {n} of {total}, letter {letter}",
+    },
+
+    // What a coloured key says to a screen reader.
+    keyState: {
+      correct: "{letter}, right place",
+      present: "{letter}, in the word, elsewhere",
+      absent: "{letter}, not in the word",
     },
 
     reveal: {
@@ -208,13 +215,20 @@ const ptBR = {
       solved: "{name} acertou.",
       youSolved: "Você acertou.",
       keyboard: "Teclado",
-      enter: "Enter",
+      enter: "ENTER",
       backspace: "Apagar",
       yourBoard: "Suas tentativas",
       others: "Outros jogadores",
       progress: "{name}: {count} de 6 tentativas",
       cellEmpty: "Casa {n} de {total}, vazia",
       cellLetter: "Casa {n} de {total}, letra {letter}",
+    },
+
+    // O que uma tecla colorida diz para o leitor de tela.
+    keyState: {
+      correct: "{letter}, certa",
+      present: "{letter}, em outro lugar",
+      absent: "{letter}, não está na palavra",
     },
 
     reveal: {

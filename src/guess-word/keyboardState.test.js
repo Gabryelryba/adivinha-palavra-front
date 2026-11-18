@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { letterStates, keyFromEvent, emptyGuess, fitGuess, guessWord, selectCell, editGuess } from "./keyboardState.js";
+import { letterStates, keyFromEvent, emptyGuess, fitGuess, guessWord, selectCell, editGuess, KEY_ROWS, keyGrid, GRID_COLUMNS, revealDelay } from "./keyboardState.js";
 
 const C = "correct";
 const P = "present";
@@ -115,5 +115,39 @@ describe("keyFromEvent", () => {
     expect(key("1")).toBe(null);
     expect(key("Shift")).toBe(null);
     expect(key("r", { ctrlKey: true })).toBe(null);
+  });
+});
+
+describe("the keyboard's layout", () => {
+  const grid = keyGrid();
+  const at = (key) => grid.find((k) => k.key === key);
+  const end = (k) => k.column + k.span - 1;
+
+  test("Delete closes the second row and Enter the third", () => {
+    expect(KEY_ROWS[1].at(-1)).toBe("BACKSPACE");
+    expect(KEY_ROWS[2].at(-1)).toBe("ENTER");
+    expect(KEY_ROWS.flat().filter((k) => /^[A-Z]$/.test(k))).toHaveLength(26);
+  });
+
+  test("each row starts one column further in: Q at 1, A at 2, Z at 3", () => {
+    expect(at("Q").column).toBe(1);
+    expect(at("A").column).toBe(2);
+    expect(at("Z").column).toBe(3);
+    expect(at("W").column).toBe(4);
+    expect(grid.filter((k) => /^[A-Z]$/.test(k.key)).every((k) => k.span === 3)).toBe(true);
+  });
+
+  test("Delete and a wide Enter end at the grid's right edge; letters never overlap them", () => {
+    expect(end(at("BACKSPACE"))).toBe(GRID_COLUMNS);
+    expect(end(at("ENTER"))).toBe(GRID_COLUMNS);
+    expect(at("ENTER").span).toBe(8);
+    expect(end(at("L"))).toBeLessThan(at("BACKSPACE").column);
+    expect(end(at("M"))).toBeLessThan(at("ENTER").column);
+    expect(end(at("P"))).toBeLessThanOrEqual(GRID_COLUMNS);
+  });
+
+  test("the keys change colour once the newest row has turned over", () => {
+    expect(revealDelay(5)).toBe(4 * 90 + 500);
+    expect(revealDelay(1)).toBe(500);
   });
 });

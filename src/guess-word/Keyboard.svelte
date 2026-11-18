@@ -1,64 +1,80 @@
 <script>
   import Backspace from "phosphor-svelte/lib/Backspace";
-  import { KEY_ROWS } from "./keyboardState.js";
+  import { keyGrid } from "./keyboardState.js";
   import { t } from "arcade-hub-ui/i18n/index.svelte.js";
 
-  // QWERTY with Enter and Delete. states: { letter: best colour so far }.
+  // Three staggered rows on a grid of 32 columns (keyGrid): Delete closes the
+  // second row and a wide Enter the third. states: { letter: best colour so far }.
   let { states = {}, disabled = false, onKey } = $props();
+
+  const keys = keyGrid();
+
+  // A grey key's letter almost disappears on screen, so every coloured key says
+  // its state out loud.
+  const label = (key) => {
+    if (key === "ENTER") return t("guessWord.round.enter");
+    if (key === "BACKSPACE") return t("guessWord.round.backspace");
+    return states[key] ? t(`guessWord.keyState.${states[key]}`, { letter: key }) : key;
+  };
 </script>
 
 <div class="keyboard" role="group" aria-label={t("guessWord.round.keyboard")} translate="no">
-  {#each KEY_ROWS as row, r (r)}
-    <div class="key-row">
-      {#each row as key (key)}
-        {#if key === "ENTER"}
-          <button class="key wide" {disabled} onclick={() => onKey("ENTER")}>{t("guessWord.round.enter")}</button>
-        {:else if key === "BACKSPACE"}
-          <button class="key wide" {disabled} onclick={() => onKey("BACKSPACE")} aria-label={t("guessWord.round.backspace")}>
-            <Backspace size={20} weight="light" aria-hidden="true" />
-          </button>
-        {:else}
-          <button class="key {states[key] ?? ''}" {disabled} onclick={() => onKey(key)}>{key}</button>
-        {/if}
-      {/each}
-    </div>
+  {#each keys as { key, row, column, span } (key)}
+    <button
+      class="key {states[key] ?? ''}"
+      class:enter={key === "ENTER"}
+      style:grid-row={row}
+      style:grid-column="{column} / span {span}"
+      {disabled}
+      aria-label={label(key)}
+      onclick={() => onKey(key)}
+    >
+      {#if key === "ENTER"}
+        {t("guessWord.round.enter")}
+      {:else if key === "BACKSPACE"}
+        <Backspace size="1em" weight="regular" aria-hidden="true" />
+      {:else}
+        {key}
+      {/if}
+    </button>
   {/each}
 </div>
 
 <style>
+  /* The whole keyboard is sized by its height; the letters follow it. */
   .keyboard {
+    --kbd-height: clamp(8.5rem, 20dvh, 12rem);
     display: grid;
-    gap: 0.4rem;
+    grid-template-columns: repeat(32, minmax(0, 1fr));
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    gap: 0.25em;
     width: 100%;
-    max-width: 32rem;
+    max-width: 38rem;
+    height: var(--kbd-height);
     margin: 0 auto;
+    padding: 0 0 0.3em;
+    font-size: calc(var(--kbd-height) / 7);
     user-select: none;
     touch-action: manipulation;
   }
 
-  .key-row {
-    display: flex;
-    justify-content: center;
-    gap: 0.3rem;
-  }
-
   .key {
-    flex: 1 1 0;
     min-width: 0;
-    height: clamp(2.5rem, 7dvh, 3.4rem);
-    display: grid;
-    place-items: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 0;
     border: 0;
-    border-radius: 0.5rem;
-    background: var(--surface-hover);
+    border-radius: 8%;
+    background: var(--surface-raised);
     color: var(--ink);
-    font-family: var(--font-mono);
-    font-weight: 700;
-    font-size: 0.95rem;
+    font: inherit;
+    font-weight: 600;
+    line-height: 1;
     cursor: pointer;
     transition:
-      background-color 0.3s var(--ease-spring),
+      background-color 0.5s ease-in-out,
+      color 0.5s ease-in-out,
       transform 0.15s var(--ease-spring);
   }
 
@@ -76,10 +92,8 @@
     opacity: 0.55;
   }
 
-  .wide {
-    flex-grow: 1.6;
-    font-family: inherit;
-    font-size: 0.8rem;
+  .enter {
+    font-size: 0.9em;
   }
 
   .correct {
@@ -90,29 +104,25 @@
     background: var(--tile-present);
   }
 
+  /* Not in the word: the key stays, its letter fades into the background. */
   .absent {
-    background: var(--tile-absent);
-    color: var(--ink-faint);
+    background: var(--surface-hover);
+    color: var(--bg);
   }
 
-  /* The middle row is a key shorter, as on a real keyboard. */
-  .key-row:nth-child(2) {
-    padding: 0 4.5%;
-  }
-
-  @media (max-width: 360px) {
-    .key-row {
-      gap: 0.22rem;
+  /* On a phone the keyboard runs almost edge to edge, into the page's side
+     margins, so the keys stay close to square. */
+  @media (max-width: 640px) {
+    .keyboard {
+      width: calc(100% + 2 * var(--edge-gutter) - 0.8rem);
+      max-width: none;
+      margin-inline: calc(0.4rem - var(--edge-gutter));
     }
+  }
 
+  @media (prefers-reduced-motion: reduce) {
     .key {
-      font-size: 0.85rem;
-    }
-
-    .wide {
-      flex-grow: 1.9;
-      padding: 0;
-      font-size: 0.68rem;
+      transition: none;
     }
   }
 </style>
