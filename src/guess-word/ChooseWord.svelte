@@ -107,9 +107,14 @@
 </section>
 
 <style>
+  /* One column held to the space there is. Left to grow on its own (an auto
+     column), it widens to the word field's natural size: twenty characters of
+     the large spaced-out monospace font, wider than a phone, so the form ran
+     past the right edge. */
   .choose {
     flex: 1;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     align-content: center;
     justify-items: center;
     width: 100%;
@@ -119,7 +124,9 @@
   .pick {
     display: grid;
     gap: 0.6rem;
-    width: min(26rem, 100%);
+    width: 100%;
+    max-width: 26rem;
+    min-width: 0;
   }
 
   h2 {
@@ -142,6 +149,7 @@
 
   .word-input {
     flex: 1 1 0;
+    width: 100%;
     min-width: 0;
     min-height: 3.2rem;
     padding: 0 1rem;
