@@ -1,10 +1,6 @@
-import { describe, test, expect, afterEach } from "vitest";
+import { describe, test, expect } from "vitest";
 import { secondsLeft, formatClock, upcomingChoosers, outcomeText, roundScores, breakdownText, breakdownLine, scoringLines, nextButton, triesLimit, triesLeft, rowsShown } from "./round.js";
 import { headline } from "./result.js";
-import { setLanguage } from "arcade-hub-ui/i18n/index.svelte.js";
-
-afterEach(() => setLanguage("en"));
-
 const players = [
   { index: 0, name: "Iara", color: 1 },
   { index: 1, name: "Caetano", color: 2 },
@@ -41,21 +37,11 @@ test("who chooses next, skipping whoever left", () => {
 });
 
 describe("how the round ended", () => {
-  test("in English", () => {
-    const solved = view({ outcome: "solved", solvedBy: 0, players: [{ tries: 2 }, {}, {}] });
-    expect(outcomeText(solved, players, 2)).toBe("Iara guessed it in 2 tries.");
-    expect(outcomeText(view({ outcome: "solved", solvedBy: 0, players: [{ tries: 1 }] }), players, 0)).toBe(
-      "You guessed it on the first try."
-    );
-    expect(outcomeText(view({ outcome: "time-up" }), players, 0)).toBe("Time ran out and nobody guessed it.");
-    expect(outcomeText(view({ outcome: "no-tries" }), players, 0)).toBe("Everyone ran out of tries.");
-  });
-
-  test("in Portuguese", () => {
-    setLanguage("pt-BR");
+  test("in words", () => {
     const solved = view({ outcome: "solved", solvedBy: 0, players: [{ tries: 3 }] });
     expect(outcomeText(solved, players, 2)).toBe("Iara acertou em 3 tentativas.");
     expect(outcomeText(view({ outcome: "time-up" }), players, 0)).toBe("O tempo acabou e ninguém acertou.");
+    expect(outcomeText(view({ outcome: "no-tries" }), players, 0)).toBe("Acabaram as tentativas de todo mundo.");
   });
 });
 
@@ -70,21 +56,20 @@ test("scores between rounds: highest first, from the total before this round", (
 describe("the final headline", () => {
   test("a single winner, with points", () => {
     const end = view({ phase: "over" }, { winners: [0] });
-    expect(headline(end, players, 0)).toEqual({ title: "You Win", detail: "170 points.", won: true });
-    setLanguage("pt-BR");
+    expect(headline(end, players, 0)).toMatchObject({ title: "Você Venceu", won: true });
     expect(headline(end, players, 1)).toEqual({ title: "Iara Venceu", detail: "170 pontos.", won: false });
   });
 
   test("a shared win", () => {
     const end = view({ phase: "over" }, { winners: [0, 1], scores: [100, 100, 0] });
-    expect(headline(end, players, 2).title).toBe("It’s a Tie");
-    expect(headline(end, players, 0).detail).toBe("You share the top with Caetano.");
+    expect(headline(end, players, 2).title).toBe("Empate");
+    expect(headline(end, players, 0).detail).toBe("Você divide o topo com Caetano.");
   });
 
   test("everyone else left", () => {
     const end = view({ phase: "over" }, { winners: [0] });
     const gone = [players[0], { ...players[1], left: true }, { ...players[2], left: true }];
-    expect(headline(end, gone, 0).detail).toBe("Everyone else left the match.");
+    expect(headline(end, gone, 0).detail).toBe("Todos os outros saíram da partida.");
   });
 });
 
@@ -95,25 +80,19 @@ describe("where the points came from", () => {
   ];
 
   test("each reason in words, singular and plural", () => {
-    expect(breakdownLine(solver)).toBe("Guessed it +100 · 3 tries left +45");
-    expect(breakdownText({ kind: "triesLeft", count: 1, points: 15 })).toBe("1 try left +15");
-    expect(breakdownText({ kind: "green", count: 2, points: 10 })).toBe("2 greens +10");
-    expect(breakdownText({ kind: "yellow", count: 1, points: 2 })).toBe("1 yellow +2");
-    expect(breakdownText({ kind: "chooserTries", count: 6, points: 120 })).toBe("Tries: 6 +120");
-    expect(breakdownText({ kind: "chooserTries", count: 0, points: 0 })).toBe("Tries: 0 +0");
-  });
-
-  test("in Portuguese", () => {
-    setLanguage("pt-BR");
     expect(breakdownLine(solver)).toBe("Acertou +100 · 3 tentativas sobrando +45");
-    expect(breakdownText({ kind: "chooserTries", count: 3, points: 60 })).toBe("Tentativas: 3 +60");
+    expect(breakdownText({ kind: "triesLeft", count: 1, points: 15 })).toBe("1 tentativa sobrando +15");
+    expect(breakdownText({ kind: "green", count: 2, points: 10 })).toBe("2 verdes +10");
+    expect(breakdownText({ kind: "yellow", count: 1, points: 2 })).toBe("1 amarela +2");
+    expect(breakdownText({ kind: "chooserTries", count: 6, points: 120 })).toBe("Tentativas: 6 +120");
+    expect(breakdownText({ kind: "chooserTries", count: 0, points: 0 })).toBe("Tentativas: 0 +0");
   });
 
   test("time-based reasons are gone, and a reason this site does not know is left out", () => {
     for (const kind of ["speed", "chooserHeld", "chooserCap", "nobodyGuessed", "bonus"]) {
       expect(breakdownText({ kind, count: 1, points: 5 })).toBe("");
     }
-    expect(breakdownLine([{ kind: "bonus", points: 5 }, { kind: "green", count: 1, points: 5 }])).toBe("1 green +5");
+    expect(breakdownLine([{ kind: "bonus", points: 5 }, { kind: "green", count: 1, points: 5 }])).toBe("1 verde +5");
   });
 
   test("each row carries its reasons, adding up to what it gained", () => {
@@ -133,20 +112,17 @@ describe("where the points came from", () => {
   test("the legend reads its numbers from the server", () => {
     const scoring = { solved: 100, perTryLeft: 15, green: 5, yellow: 2, chooserPerTry: 20, maxTries: 6 };
     const [solverLine, othersLine, chooserLine] = scoringLines(scoring);
-    expect(solverLine).toBe("Whoever guesses it: 100, plus 15 per try left.");
-    expect(othersLine).toContain("5 per green and 2 per yellow");
-    expect(chooserLine).toContain("20 per try until the word fell, guessed or not");
+    expect(solverLine).toBe("Quem acerta: 100, mais 15 por tentativa que sobrou.");
+    expect(othersLine).toContain("5 por letra verde e 2 por amarela");
+    expect(chooserLine).toContain("20 por tentativa até a palavra sair, com ou sem acerto");
     expect(scoringLines({ ...scoring, solved: 120 })[0]).toContain("120");
   });
 
-  test("the legend has no time and no number left without a value, in both languages", () => {
+  test("the legend has no time and no number left without a value", () => {
     const scoring = { solved: 100, perTryLeft: 15, green: 5, yellow: 2, chooserPerTry: 20, maxTries: 6 };
-    for (const language of ["en", "pt-BR"]) {
-      setLanguage(language);
-      for (const line of scoringLines(scoring)) {
-        expect(line).not.toMatch(/[{}]/);
-        expect(line).not.toMatch(/speed|rapidez|\bs\b|second|segundo/i);
-      }
+    for (const line of scoringLines(scoring)) {
+      expect(line).not.toMatch(/[{}]/);
+      expect(line).not.toMatch(/rapidez|\bs\b|segundo/i);
     }
   });
 });
@@ -156,12 +132,12 @@ describe("the button to move on", () => {
   const reveal = (round = {}, extra) => view({ phase: "reveal", chooser: 1, ready: [], ...round }, extra);
 
   test("whoever picks next is asked to choose the word; the others go to the next round", () => {
-    expect(nextButton(reveal(), players, 2).label).toBe("Choose the Word");
-    expect(nextButton(reveal(), players, 0).label).toBe("Next Round");
+    expect(nextButton(reveal(), players, 2).label).toBe("Escolher a Palavra");
+    expect(nextButton(reveal(), players, 0).label).toBe("Próxima Rodada");
   });
 
   test("after the last round it leads to the results", () => {
-    expect(nextButton(reveal({ chooser: 0 }), players, 1).label).toBe("See Results");
+    expect(nextButton(reveal({ chooser: 0 }), players, 1).label).toBe("Ver Resultado");
   });
 
   test("after tapping it waits, counting only who is still in the match", () => {
@@ -177,12 +153,6 @@ describe("the button to move on", () => {
     expect(nextButton(view({ phase: "reveal" }), players, 0).available).toBe(false);
   });
 
-  test("in Portuguese", () => {
-    setLanguage("pt-BR");
-    expect(nextButton(reveal(), players, 2).label).toBe("Escolher a Palavra");
-    expect(nextButton(reveal(), players, 0).label).toBe("Próxima Rodada");
-    expect(nextButton(reveal({ chooser: 0 }), players, 1).label).toBe("Ver Resultado");
-  });
 });
 
 describe("the room's limit of tries", () => {

@@ -22,7 +22,7 @@
   import { letterStates, keyFromEvent, emptyGuess, fitGuess, guessWord, selectCell, editGuess, revealDelay } from "./keyboardState.js";
   import { outcomeText, nameOf, triesLimit, triesLeft, rowsShown } from "./round.js";
   import { ranking, headline, rematchVote } from "./result.js";
-  import { t, tList, serverMessage, currentLanguage } from "arcade-hub-ui/i18n/index.svelte.js";
+  import { t, tList, serverMessage } from "arcade-hub-ui/i18n/index.svelte.js";
 
   const GAME_ID = "guess-word";
   // Seats in the waiting room, as on the server (games/<id> in arcade-hub-back).
@@ -351,13 +351,11 @@
     socket.emit("joinRoom", { code, gameId: GAME_ID, name });
   }
 
-  // The words default to the host's screen language; the host can change it in the room.
   async function createRoom() {
     const name = await ensureName();
     if (!name) return;
     joinError = "";
-    const language = currentLanguage().startsWith("pt") ? "pt" : "en";
-    socket.emit("createRoom", { gameId: GAME_ID, name, options: { language } });
+    socket.emit("createRoom", { gameId: GAME_ID, name });
   }
 
   function backToMenu(message = "") {
