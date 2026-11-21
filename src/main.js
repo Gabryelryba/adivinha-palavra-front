@@ -1,3 +1,6 @@
+// First, before socket.js creates the clientId: with ?diag=1 it records whether
+// the tab still had one (DG-130).
+import "./diagnostics.js";
 import { mount } from "svelte";
 import "arcade-hub-ui/app.css";
 import { registerMessages, t } from "arcade-hub-ui/i18n/index.svelte.js";

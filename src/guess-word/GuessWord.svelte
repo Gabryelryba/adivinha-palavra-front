@@ -7,6 +7,10 @@
   import GameLanding from "arcade-hub-ui/GameLanding.svelte";
   import ResultSheet from "arcade-hub-ui/ResultSheet.svelte";
   import { startHint } from "arcade-hub-ui/lobbyText.js";
+  import { rememberRoom, recallRoom, forgetRoom } from "arcade-hub-ui/roomMemory.js";
+  import { connectDecision } from "./resume.js";
+  import { diagActive, diagLog } from "../diagnostics.js";
+  import DiagPanel from "../DiagPanel.svelte";
   import Preview from "./Preview.svelte";
   import Lobby from "./Lobby.svelte";
   import ChooseWord from "./ChooseWord.svelte";
@@ -81,20 +85,53 @@
 
   function handleConnect() {
     slowServer = false;
-    if (status === "lobby") {
-      resumeSeat();
-    } else if (status === "playing" || status === "ended") {
-      // A match cannot be resumed: the server has already taken this player out.
-      backToMenu(t("guessWord.droppedOut"));
-    } else if (inviteCode) {
-      const code = inviteCode;
+    const decision = connectDecision({ status, remembered: recallRoom(), inviteCode, gameId: GAME_ID });
+    if (diagActive) diagLog("decision", decision.action);
+    if (decision.usedInvite) {
       inviteCode = null;
       onInviteUsed();
-      status = "menu";
-      sendJoin(code);
+    }
+    if (decision.action === "resume-seat") {
+      resumeSeat();
+    } else if (decision.action === "dropped") {
+      // A match cannot be resumed: the server has already taken this player out.
+      backToMenu(t("guessWord.droppedOut"));
+    } else if (decision.action === "resume-remembered") {
+      resumeRemembered(decision.code, decision.joinAfter);
     } else {
       status = "menu";
+      if (decision.action === "join") sendJoin(decision.code);
     }
+  }
+
+  // The page reloaded while in a waiting room (a phone brought the tab back from
+  // the background): take the same seat, as host if it was the host's. The
+  // screen keeps showing "connecting" meanwhile; the server sends the room's
+  // `lobby` right before it answers.
+  function resumeRemembered(code, joinAfter) {
+    socket.timeout(4000).emit("resumeRoom", (err, res) => {
+      if (status !== "connecting" && status !== "menu") return;
+      if (!err && res?.ok && res.lobby) {
+        roomCode = res.code;
+        status = "lobby";
+        reconnecting = false;
+        rememberRoom({ code: res.code, gameId: GAME_ID });
+        return;
+      }
+      forgetRoom();
+      if (joinAfter) {
+        status = "menu";
+        sendJoin(joinAfter);
+        return;
+      }
+      backToMenu(t(err ? "guessWord.connectionLost" : "guessWord.seatExpired"));
+    });
+  }
+
+  // Leaving the page (another app, a locked phone) is when the room is
+  // remembered last, so the 3 minutes count from there.
+  function rememberOnLeave() {
+    if (status === "lobby" && roomCode) rememberRoom({ code: roomCode, gameId: GAME_ID });
   }
 
   function handleDisconnect() {
@@ -121,6 +158,7 @@
   }
 
   function handleVisibility() {
+    if (document.visibilityState === "hidden") rememberOnLeave();
     if (document.visibilityState !== "visible" || status !== "lobby") return;
     if (socket.connected) resumeSeat();
     else socket.connect();
@@ -129,11 +167,13 @@
   function handleRoomCreated({ code }) {
     roomCode = code;
     status = "lobby";
+    rememberRoom({ code, gameId: GAME_ID });
   }
 
   function handleJoinedLobby({ code }) {
     roomCode = code;
     status = "lobby";
+    rememberRoom({ code, gameId: GAME_ID });
   }
 
   function handleLobby(view) {
@@ -141,9 +181,11 @@
     lobby = view;
     roomCode = view.code;
     if (view.phase === "lobby" && status === "joining") status = "lobby";
+    if (view.phase === "lobby" && status === "lobby") rememberRoom({ code: view.code, gameId: GAME_ID });
     if (view.phase === "lobby" && status === "ended") {
       status = "lobby";
       game = null;
+      rememberRoom({ code: view.code, gameId: GAME_ID });
       say(t("guessWord.backInLobby"), 5000);
       return;
     }
@@ -155,6 +197,7 @@
 
   // A code from another game's room is refused by the server as room-not-found.
   function handleJoinError(refusal) {
+    forgetRoom();
     joinError = serverMessage("join", refusal);
     status = "menu";
     showJoinForm = true;
@@ -172,6 +215,8 @@
     pending = false;
     status = "playing";
     confirmLeave = false;
+    // A match cannot be resumed; remembered only to say why a reload lands on the menu.
+    if (roomCode) rememberRoom({ code: roomCode, gameId: GAME_ID, phase: "playing" });
     say("");
   }
 
@@ -249,9 +294,29 @@
     pressKey(key);
   }
 
+  // ?diag=1 only (DG-130): the socket's side of the diagnostics log.
+  let droppedAt = null;
+  const diagListeners = {
+    connect: () => {
+      diagLog("connect", droppedAt ? `${Math.round((Date.now() - droppedAt) / 1000)} s depois da queda` : "");
+      droppedAt = null;
+    },
+    disconnect: (reason) => {
+      droppedAt = Date.now();
+      diagLog("disconnect", reason);
+    },
+    connect_error: (err) => diagLog("connect_error", err?.message ?? ""),
+  };
+
+  $effect(() => {
+    if (diagActive) diagLog("status", status);
+  });
+
   onMount(() => {
     for (const [event, handler] of Object.entries(listeners)) socket.on(event, handler);
+    if (diagActive) for (const [event, handler] of Object.entries(diagListeners)) socket.on(event, handler);
     document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("pagehide", rememberOnLeave);
     window.addEventListener("keydown", handleKeydown);
     socket.connect();
     const slowTimer = setTimeout(() => {
@@ -260,11 +325,17 @@
     return () => clearTimeout(slowTimer);
   });
 
+  // Runs when the game screen is taken down, never on a reload or when the tab
+  // is discarded: a reload must not send leaveRoom, or the seat would be gone
+  // before the new page asks for it back.
   onDestroy(() => {
     // Leaving the game screen gives the seat up at once.
     if (socket.connected && (status === "lobby" || status === "playing" || status === "ended")) socket.emit("leaveRoom");
+    forgetRoom();
     for (const [event, handler] of Object.entries(listeners)) socket.off(event, handler);
+    for (const [event, handler] of Object.entries(diagListeners)) socket.off(event, handler);
     document.removeEventListener("visibilitychange", handleVisibility);
+    window.removeEventListener("pagehide", rememberOnLeave);
     window.removeEventListener("keydown", handleKeydown);
     clearTimeout(noticeTimer);
     clearTimeout(moveErrorTimer);
@@ -299,6 +370,7 @@
     reconnecting = false;
     confirmLeave = false;
     joinError = message;
+    forgetRoom();
     say("");
   }
 
@@ -530,6 +602,10 @@
     onBackToLobby={() => socket.emit("backToLobby")}
     onMenu={leaveRoom}
   />
+{/if}
+
+{#if diagActive}
+  <DiagPanel />
 {/if}
 
 <style>
