@@ -92,32 +92,33 @@ describe("where the points came from", () => {
   const solver = [
     { kind: "solved", points: 100 },
     { kind: "triesLeft", count: 3, points: 45 },
-    { kind: "speed", count: 30, points: 25 },
   ];
 
   test("each reason in words, singular and plural", () => {
-    expect(breakdownLine(solver)).toBe("Guessed it +100 · 3 tries left +45 · Speed +25");
+    expect(breakdownLine(solver)).toBe("Guessed it +100 · 3 tries left +45");
     expect(breakdownText({ kind: "triesLeft", count: 1, points: 15 })).toBe("1 try left +15");
     expect(breakdownText({ kind: "green", count: 2, points: 10 })).toBe("2 greens +10");
     expect(breakdownText({ kind: "yellow", count: 1, points: 2 })).toBe("1 yellow +2");
-    expect(breakdownText({ kind: "chooserCap", count: 150, points: -30 })).toBe("Capped at 150");
-    expect(breakdownText({ kind: "nobodyGuessed", points: 0 })).toBe("Nobody guessed it · 0");
+    expect(breakdownText({ kind: "chooserTries", count: 6, points: 120 })).toBe("Tries: 6 +120");
+    expect(breakdownText({ kind: "chooserTries", count: 0, points: 0 })).toBe("Tries: 0 +0");
   });
 
   test("in Portuguese", () => {
     setLanguage("pt-BR");
-    expect(breakdownLine(solver)).toBe("Acertou +100 · 3 tentativas sobrando +45 · Rapidez +25");
-    expect(breakdownText({ kind: "chooserTries", count: 3, points: 60 })).toBe("Acertaram na 3ª tentativa +60");
-    expect(breakdownText({ kind: "chooserHeld", count: 60, points: 20 })).toBe("Resistiu 60 s +20");
+    expect(breakdownLine(solver)).toBe("Acertou +100 · 3 tentativas sobrando +45");
+    expect(breakdownText({ kind: "chooserTries", count: 3, points: 60 })).toBe("Tentativas: 3 +60");
   });
 
-  test("a reason this site does not know is left out", () => {
-    expect(breakdownLine([{ kind: "bonus", points: 5 }, { kind: "speed", points: 3 }])).toBe("Speed +3");
+  test("time-based reasons are gone, and a reason this site does not know is left out", () => {
+    for (const kind of ["speed", "chooserHeld", "chooserCap", "nobodyGuessed", "bonus"]) {
+      expect(breakdownText({ kind, count: 1, points: 5 })).toBe("");
+    }
+    expect(breakdownLine([{ kind: "bonus", points: 5 }, { kind: "green", count: 1, points: 5 }])).toBe("1 green +5");
   });
 
   test("each row carries its reasons, adding up to what it gained", () => {
     const rows = roundScores(
-      view({ phase: "reveal", solvedBy: 0, points: [170, 50, 15], breakdown: [solver, [{ kind: "chooserTries", count: 3, points: 50 }], [{ kind: "green", count: 3, points: 15 }]] }),
+      view({ phase: "reveal", solvedBy: 0, points: [145, 60, 15], breakdown: [solver, [{ kind: "chooserTries", count: 3, points: 60 }], [{ kind: "green", count: 3, points: 15 }]] }),
       players
     );
     for (const row of rows) expect(row.breakdown.reduce((s, i) => s + i.points, 0)).toBe(row.gained);
@@ -130,12 +131,23 @@ describe("where the points came from", () => {
   });
 
   test("the legend reads its numbers from the server", () => {
-    const scoring = { solved: 100, perTryLeft: 15, speedMax: 50, green: 5, yellow: 2, chooserPerTry: 20, chooserPerSeconds: 3, chooserMax: 150 };
+    const scoring = { solved: 100, perTryLeft: 15, green: 5, yellow: 2, chooserPerTry: 20, maxTries: 6 };
     const [solverLine, othersLine, chooserLine] = scoringLines(scoring);
-    expect(solverLine).toBe("Whoever guesses it: 100, plus 15 per try left, plus up to 50 for speed.");
+    expect(solverLine).toBe("Whoever guesses it: 100, plus 15 per try left.");
     expect(othersLine).toContain("5 per green and 2 per yellow");
-    expect(chooserLine).toContain("up to 150");
+    expect(chooserLine).toContain("20 per try until the word fell, guessed or not");
     expect(scoringLines({ ...scoring, solved: 120 })[0]).toContain("120");
+  });
+
+  test("the legend has no time and no number left without a value, in both languages", () => {
+    const scoring = { solved: 100, perTryLeft: 15, green: 5, yellow: 2, chooserPerTry: 20, maxTries: 6 };
+    for (const language of ["en", "pt-BR"]) {
+      setLanguage(language);
+      for (const line of scoringLines(scoring)) {
+        expect(line).not.toMatch(/[{}]/);
+        expect(line).not.toMatch(/speed|rapidez|\bs\b|second|segundo/i);
+      }
+    }
   });
 });
 

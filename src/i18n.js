@@ -16,7 +16,7 @@ const en = {
       { title: "Create a room and send the link", text: "From 2 to 5 players. In the waiting room the host picks the time per round, the language and the longest word allowed." },
       { title: "One player picks the secret word", text: "Each round someone else chooses. Everyone gets to choose once, in an order drawn at the start." },
       { title: "Everyone else guesses", text: "Six tries each. Green is the right letter in the right place, yellow is in the word but elsewhere, grey is not in the word." },
-      { title: "Points for being quick", text: "Guessing with fewer tries and faster scores more, and the chooser scores while the word holds out. Most points wins." },
+      { title: "Points for every try", text: "Guessing in fewer tries scores more, and the chooser scores for every try the word takes. Most points wins." },
     ],
     eyebrow: "Group Wordle · 2 to 5 players",
     lede: "Each round one player picks a secret word and everyone else races to guess it, six tries each. The first right guess ends the round. Everyone picks once; the most points wins.",
@@ -116,21 +116,18 @@ const en = {
     breakdown: {
       solved: "Guessed it +{points}",
       triesLeft: { one: "1 try left +{points}", other: "{count} tries left +{points}" },
-      speed: "Speed +{points}",
       green: { one: "1 green +{points}", other: "{count} greens +{points}" },
       yellow: { one: "1 yellow +{points}", other: "{count} yellows +{points}" },
-      chooserTries: "Guessed on try {count} +{points}",
-      chooserHeld: "Held out {count} s +{points}",
-      chooserCap: "Capped at {count}",
-      nobodyGuessed: "Nobody guessed it · 0",
+      // The tries the word took, guessed or not.
+      chooserTries: "Tries: {count} +{points}",
     },
 
     // The legend under the scores; the numbers come from the server (scoring).
     scoring: {
       title: "How scoring works",
-      solver: "Whoever guesses it: {solved}, plus {perTryLeft} per try left, plus up to {speedMax} for speed.",
+      solver: "Whoever guesses it: {solved}, plus {perTryLeft} per try left.",
       others: "Everyone else guessing: {green} per green and {yellow} per yellow, from their best row.",
-      chooser: "Whoever picked the word: {chooserPerTry} per try the guesser needed, plus 1 for every {chooserPerSeconds} s it held out, up to {chooserMax}. Nobody guessed it: 0.",
+      chooser: "Whoever picked the word: {chooserPerTry} per try until the word fell, guessed or not. If nobody guesses it, the one who tried most counts.",
     },
 
     result: {
@@ -153,7 +150,7 @@ const ptBR = {
       { title: "Crie a sala e mande o link", text: "De 2 a 5 jogadores. Na sala de espera, o anfitrião escolhe o tempo de cada rodada, o idioma e o tamanho máximo da palavra." },
       { title: "Um jogador escolhe a palavra secreta", text: "A cada rodada escolhe uma pessoa diferente. Todo mundo escolhe uma vez, numa ordem sorteada no começo." },
       { title: "Os outros tentam adivinhar", text: "Seis tentativas para cada um. Verde é letra certa no lugar certo, amarelo é letra que está em outro lugar, cinza é letra que não está na palavra." },
-      { title: "Rapidez vale pontos", text: "Quem acerta com menos tentativas e mais rápido marca mais, e quem escolheu marca enquanto a palavra resiste. Vence quem somar mais pontos." },
+      { title: "Cada tentativa conta", text: "Quem acerta com menos tentativas marca mais, e quem escolheu marca a cada tentativa que a palavra leva. Vence quem somar mais pontos." },
     ],
     eyebrow: "Wordle em grupo · 2 a 5 jogadores",
     lede: "A cada rodada, um jogador escolhe uma palavra secreta e os outros correm para adivinhar, com seis tentativas cada. O primeiro acerto encerra a rodada. Todo mundo escolhe uma vez; vence quem fizer mais pontos.",
@@ -253,21 +250,18 @@ const ptBR = {
     breakdown: {
       solved: "Acertou +{points}",
       triesLeft: { one: "1 tentativa sobrando +{points}", other: "{count} tentativas sobrando +{points}" },
-      speed: "Rapidez +{points}",
       green: { one: "1 verde +{points}", other: "{count} verdes +{points}" },
       yellow: { one: "1 amarela +{points}", other: "{count} amarelas +{points}" },
-      chooserTries: "Acertaram na {count}ª tentativa +{points}",
-      chooserHeld: "Resistiu {count} s +{points}",
-      chooserCap: "Limite de {count}",
-      nobodyGuessed: "Ninguém acertou · 0",
+      // As tentativas que a palavra levou, com ou sem acerto.
+      chooserTries: "Tentativas: {count} +{points}",
     },
 
     // A legenda embaixo do placar; os números vêm do servidor (scoring).
     scoring: {
       title: "Como a pontuação funciona",
-      solver: "Quem acerta: {solved}, mais {perTryLeft} por tentativa que sobra, mais até {speedMax} pela rapidez.",
+      solver: "Quem acerta: {solved}, mais {perTryLeft} por tentativa que sobrou.",
       others: "Quem não acerta: {green} por letra verde e {yellow} por amarela, da melhor linha.",
-      chooser: "Quem escolheu a palavra: {chooserPerTry} por tentativa de quem acertou, mais 1 a cada {chooserPerSeconds} s que a palavra resistiu, até {chooserMax}. Ninguém acertou: 0.",
+      chooser: "Quem escolheu a palavra: {chooserPerTry} por tentativa até a palavra sair, com ou sem acerto. Se ninguém acertar, conta quem mais tentou.",
     },
 
     result: {
