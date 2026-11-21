@@ -20,7 +20,7 @@
   import Timer from "./Timer.svelte";
   import RoundScore from "./RoundScore.svelte";
   import { letterStates, keyFromEvent, emptyGuess, fitGuess, guessWord, selectCell, editGuess, revealDelay } from "./keyboardState.js";
-  import { outcomeText, nameOf } from "./round.js";
+  import { outcomeText, nameOf, triesLimit, triesLeft, rowsShown } from "./round.js";
   import { ranking, headline, rematchVote } from "./result.js";
   import { t, tList, serverMessage, currentLanguage } from "arcade-hub-ui/i18n/index.svelte.js";
 
@@ -437,8 +437,11 @@
   const mine = $derived(round?.players[playerIndex] ?? { tries: 0, rows: [] });
   const wordLength = $derived(round?.length ?? 5);
   const typing = $derived(fitGuess(guess, wordLength));
+  // The room's limit of tries, or null for no limit (DG-150).
+  const limit = $derived(triesLimit(game));
+  const myTriesLeft = $derived(triesLeft(limit, mine.tries));
   const canGuess = $derived(
-    status === "playing" && round?.phase === "guessing" && !amChooser && mine.tries < (game?.maxTries ?? 6) && !pending
+    status === "playing" && round?.phase === "guessing" && !amChooser && myTriesLeft !== 0 && !pending
   );
   const keyStates = $derived(letterStates(mine.rows));
   // The keys show a new row's colours only once its tiles have turned over.
@@ -478,9 +481,9 @@
     if (round.phase === "reveal" || round.phase === "over") return round.outcome ? outcomeText(game, seats, playerIndex) : "";
     if (round.phase !== "guessing") return "";
     if (amChooser) return t("guessWord.round.watching", { word: round.word ?? "" }) + (round.drawn ? ` ${t("guessWord.round.drawn")}` : "");
-    const left = (game.maxTries ?? 6) - mine.tries;
-    if (left <= 0) return t("guessWord.round.noTries");
-    return `${t("guessWord.round.yourTurn", { length: wordLength })} ${t("guessWord.round.triesLeft", { count: left })}`;
+    if (myTriesLeft === 0) return t("guessWord.round.noTries");
+    const turn = t("guessWord.round.yourTurn", { length: wordLength });
+    return myTriesLeft === null ? turn : `${turn} ${t("guessWord.round.triesLeft", { count: myTriesLeft })}`;
   });
 
   // A locked phone suspends the page and drops the connection, so keep the screen on in the room and in a match.
@@ -568,8 +571,8 @@
           rows={mine.rows}
           length={wordLength}
           guess={typing}
-          maxTries={game.maxTries}
-          active={round.phase === "guessing" && mine.tries < (game.maxTries ?? 6)}
+          rowCount={rowsShown(limit, mine.tries, round.phase === "guessing" && myTriesLeft !== 0)}
+          active={round.phase === "guessing" && myTriesLeft !== 0}
           {shake}
           onSelect={selectGuessCell}
         />

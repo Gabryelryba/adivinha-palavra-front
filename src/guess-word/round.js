@@ -18,6 +18,17 @@ export function upcomingChoosers(view, players) {
   return view.order.slice(at + 1).filter((seat) => !players[seat]?.left);
 }
 
+// The room's limit of tries per player: a number, or null for no limit. An older
+// server sends none, and always played with 6.
+export const triesLimit = (view) => (view?.maxTries === undefined ? 6 : view.maxTries);
+
+// -> tries left, or null when there is no limit.
+export const triesLeft = (limit, tries) => (limit === null ? null : Math.max(0, limit - tries));
+
+// How many rows a board shows: the limit, or with no limit the rows played (plus
+// the one being typed), never fewer than 6.
+export const rowsShown = (limit, played, typing = false) => limit ?? Math.max(6, played + (typing ? 1 : 0));
+
 export const nameOf = (players, seat, me) => (seat === me ? t("common.you") : (players[seat]?.name ?? t("common.someone")));
 
 // The line under the revealed word.

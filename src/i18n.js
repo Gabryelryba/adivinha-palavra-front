@@ -45,6 +45,11 @@ const en = {
       limitOn: "Limit letters",
       noLimit: "No limit",
       upTo: "Up to {count} letters",
+      maxTries: "Tries per round",
+      maxTriesPick: "Tries",
+      maxTriesAria: "Tries each player gets per round",
+      limitTriesOn: "Limit tries",
+      upToTries: "Up to {count} tries",
       languages: {
         pt: "Português",
         en: "English",
@@ -179,6 +184,11 @@ const ptBR = {
       limitOn: "Limitar letras",
       noLimit: "Sem limite",
       upTo: "Até {count} letras",
+      maxTries: "Tentativas por rodada",
+      maxTriesPick: "Tentativas",
+      maxTriesAria: "Tentativas de cada jogador por rodada",
+      limitTriesOn: "Limitar tentativas",
+      upToTries: "Até {count} tentativas",
       languages: {
         pt: "Português",
         en: "English",

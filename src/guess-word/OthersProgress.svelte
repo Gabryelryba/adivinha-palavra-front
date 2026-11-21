@@ -1,6 +1,7 @@
 <script>
   import Check from "phosphor-svelte/lib/Check";
   import { t } from "arcade-hub-ui/i18n/index.svelte.js";
+  import { triesLimit, rowsShown } from "./round.js";
 
   // Everyone else who is guessing this round: their rows as colours only, in
   // their player colour. With `letters` (the chooser's view) the rows show the
@@ -15,6 +16,11 @@
   // the space, two sit side by side, three or four make a 2 × 2 grid.
   const cols = $derived(others.length > 1 ? 2 : 1);
   const rows = $derived(Math.max(1, Math.ceil(others.length / cols)));
+  // Rows per board: the room's limit, or with no limit what each one has played
+  // (at least 6). The boards share one size, set by the tallest.
+  const limit = $derived(triesLimit(view));
+  const rowsOf = (other) => rowsShown(limit, other.tries);
+  const tries = $derived(Math.max(6, ...others.map(rowsOf)));
 </script>
 
 <ul
@@ -23,7 +29,7 @@
   style:--cols={cols}
   style:--rows={rows}
   style:--len={length}
-  style:--tries={view.maxTries}
+  style:--tries={tries}
   aria-label={t("guessWord.round.others")}
 >
   {#each others as other (other.index)}
@@ -35,7 +41,7 @@
         {#if other.solved}<Check size={12} weight="bold" aria-hidden="true" />{/if}
       </span>
       <span class="mini" aria-label={t("guessWord.round.progress", { name: player.name, count: other.tries })} role="img" translate="no">
-        {#each Array(view.maxTries) as _, r (r)}
+        {#each Array(rowsOf(other)) as _, r (r)}
           {#each Array(length) as _, i (i)}
             {@const row = other.rows[r]}
             <i class={row?.colors[i] ?? ""}>{letters && row?.word ? row.word[i] : ""}</i>
@@ -99,8 +105,10 @@
     text-overflow: ellipsis;
   }
 
+  /* The small boards above a guesser's own board stay about as tall as six rows
+     of 5px cells: with more rows the cells get thinner (down to 2px). */
   .mini {
-    --cell: 5px;
+    --cell: max(2px, min(5px, calc((42px - (var(--tries) - 1) * 1px) / var(--tries))));
     display: grid;
     grid-template-columns: repeat(var(--len), var(--cell));
     gap: 1px;

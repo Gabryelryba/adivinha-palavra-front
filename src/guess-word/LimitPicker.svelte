@@ -1,57 +1,51 @@
 <script>
-  import TextAa from "phosphor-svelte/lib/TextAa";
   import OptionPicker from "arcade-hub-ui/OptionPicker.svelte";
   import { t } from "arcade-hub-ui/i18n/index.svelte.js";
 
-  // The longest word a player may choose: a switch (on by default) and the limit,
-  // 4 to 7. Off is the server's 0: up to 8 letters. Turning it back on restores
-  // the last limit picked. The host changes it; everyone else sees it as text.
-  let { value = 5, editable = false, onChange } = $props();
+  // A room setting with a limit: a switch (on by default) and the numbers to
+  // pick from. Off is the server's 0 (no limit). Turning it back on restores the
+  // last number picked. The host changes it; everyone else sees it as text.
+  // Used for the longest word and for the tries per round.
+  // name: an id for the field ("max-letters"); icon: a phosphor component;
+  // text: { legend, pick, aria, on, upTo } as i18n keys (upTo takes { count }).
+  let { value, limits, fallback = limits[0], name, icon: Icon, text, editable = false, onChange } = $props();
 
-  const LIMITS = [4, 5, 6, 7];
   const on = $derived(value !== 0);
-  let last = $state(5);
+  let last = $state(fallback);
   $effect(() => {
-    if (value !== 0) last = value;
+    if (value !== 0 && value != null) last = value;
   });
 
-  const choices = $derived(LIMITS.map((n) => ({ value: n, label: String(n) })));
+  const labelId = $derived(`guess-word-${name}-label`);
+  const choices = $derived(limits.map((n) => ({ value: n, label: String(n) })));
 </script>
 
 {#if editable}
   <div class="limit">
     <div class="head">
-      <span class="legend" id="guess-word-limit-label"><TextAa size={18} weight="light" aria-hidden="true" />{t("guessWord.lobby.maxLetters")}</span>
+      <span class="legend" id={labelId}><Icon size={18} weight="light" aria-hidden="true" />{t(text.legend)}</span>
       <button
         type="button"
         class="switch"
         role="switch"
         aria-checked={on}
-        aria-labelledby="guess-word-limit-label"
+        aria-labelledby={labelId}
         onclick={() => onChange(on ? 0 : last)}
       >
-        <span class="switch-text">{on ? t("guessWord.lobby.limitOn") : t("guessWord.lobby.noLimit")}</span>
+        <span class="switch-text">{on ? t(text.on) : t("guessWord.lobby.noLimit")}</span>
         <span class="track" aria-hidden="true"><span class="thumb"></span></span>
       </button>
     </div>
     {#if on}
-      <OptionPicker
-        legend={t("guessWord.lobby.maxLettersPick")}
-        label={t("guessWord.lobby.maxLettersAria")}
-        name="max-letters"
-        {choices}
-        {value}
-        editable
-        onChange={(n) => onChange(n)}
-      />
+      <OptionPicker legend={t(text.pick)} label={t(text.aria)} {name} {choices} {value} editable onChange={(n) => onChange(n)} />
     {/if}
   </div>
 {:else}
   <div class="limit">
-    <span class="legend"><TextAa size={18} weight="light" aria-hidden="true" />{t("guessWord.lobby.maxLetters")}</span>
+    <span class="legend"><Icon size={18} weight="light" aria-hidden="true" />{t(text.legend)}</span>
     <p class="chosen">
       {#key value}
-        <span class="value-chip">{on ? t("guessWord.lobby.upTo", { count: value }) : t("guessWord.lobby.noLimit")}</span>
+        <span class="value-chip">{on ? t(text.upTo, { count: value }) : t("guessWord.lobby.noLimit")}</span>
       {/key}
     </p>
   </div>
