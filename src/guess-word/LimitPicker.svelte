@@ -88,10 +88,6 @@
     .switch-text {
       display: none;
     }
-
-    .switch {
-      padding-left: 0.3rem;
-    }
   }
 
   /* The picker below repeats a small legend for screen readers only. */
@@ -104,15 +100,17 @@
     white-space: nowrap;
   }
 
+  /* Just the words and the switch: no box of its own, so it does not compete
+     with the picker under it. */
   .switch {
     display: inline-flex;
     align-items: center;
     gap: 0.55rem;
     min-height: 2.5rem;
-    padding: 0 0.3rem 0 0.75rem;
-    border: 1px solid var(--line);
+    padding: 0;
+    border: 0;
     border-radius: 999px;
-    background: var(--bg-deep);
+    background: none;
     color: var(--ink-muted);
     font-size: 0.85rem;
     font-weight: 600;
@@ -122,12 +120,10 @@
 
   .switch:hover {
     color: var(--ink);
-    border-color: var(--line-strong);
   }
 
   .switch[aria-checked="true"] {
     color: var(--ink);
-    border-color: var(--accent-line);
   }
 
   .switch:focus-visible {

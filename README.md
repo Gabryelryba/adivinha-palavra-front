@@ -1,6 +1,6 @@
 # adivinha-palavra-front
 
-Adivinha Palavra (Guess Word em inglês) é um site independente: um Wordle em grupo para 2 a 5 jogadores. A cada rodada um jogador escolhe a palavra secreta e os outros correm para adivinhar em seis tentativas. Todos escolhem uma vez; ganha quem somar mais pontos.
+Adivinha Palavra é um site independente: um Wordle em grupo para 2 a 5 jogadores. A cada rodada um jogador escolhe a palavra secreta e os outros correm para adivinhar em seis tentativas. Todos escolhem uma vez; ganha quem somar mais pontos.
 
 Este repositório é só o site do jogo. O servidor é o [arcade-hub-back](https://github.com/Gabryelryba/arcade-hub-back) (id do jogo: `guess-word`), compartilhado com os outros jogos. O código comum (componentes, socket, i18n, estilos) vem do pacote [arcade-hub-ui](https://github.com/Gabryelryba/arcade-hub-ui).
 
@@ -26,7 +26,7 @@ Precisa do [arcade-hub-back](https://github.com/Gabryelryba/arcade-hub-back) rod
 
 - `src/main.js`: registra os textos do jogo e monta a página (`GameApp` do `arcade-hub-ui`) com o jogo
 - `src/guess-word/`: o jogo
-- `src/i18n.js`: textos próprios do jogo, em português e inglês
+- `src/i18n.js`: textos próprios do jogo, em português
 
 ## Outros comandos
 
@@ -38,7 +38,7 @@ npm run preview  # serve o build
 
 ## Landing page
 
-A primeira tela do site é a landing page do jogo (`GameLanding` do `arcade-hub-ui`): o nome, a chamada e o tabuleiro animado (`Preview.svelte`), **Criar Sala**, **Entrar com Código** e a seção "Como jogar". Os passos de "Como jogar" ficam em `guessWord.steps` no `src/i18n.js`, nos dois idiomas.
+A primeira tela do site é a landing page do jogo (`GameLanding` do `arcade-hub-ui`): o nome, a chamada e o tabuleiro animado (`Preview.svelte`), **Criar Sala**, **Entrar com Código** e a seção "Como jogar". Os passos de "Como jogar" ficam em `guessWord.steps` no `src/i18n.js`.
 
 Não existe mais o hub Recreio: o site não leva a outros jogos, e sair de uma sala ou partida volta para a landing page. Um código de sala de outro jogo é recusado pelo servidor como sala inexistente.
 

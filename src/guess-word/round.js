@@ -65,8 +65,8 @@ export function roundScores(view, players) {
     })
     .sort((a, b) => b.total - a.total);
 }
-
-// One reason for a player's points, in the current language ("3 tries left
+// One reason for a player's points in words ("3 tentativas sobrando
+// +45"); "" for a kind this site does not know yet.
 // +45"); "" for a kind this site does not know yet.
 export function breakdownText({ kind, count, points }) {
   const key = `guessWord.breakdown.${kind}`;
