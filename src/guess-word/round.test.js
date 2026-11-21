@@ -1,5 +1,5 @@
 import { describe, test, expect, afterEach } from "vitest";
-import { secondsLeft, formatClock, upcomingChoosers, outcomeText, roundScores, breakdownText, breakdownLine, scoringLines, nextButton } from "./round.js";
+import { secondsLeft, formatClock, upcomingChoosers, outcomeText, roundScores, breakdownText, breakdownLine, scoringLines, nextButton, triesLimit, triesLeft, rowsShown } from "./round.js";
 import { headline } from "./result.js";
 import { setLanguage } from "arcade-hub-ui/i18n/index.svelte.js";
 
@@ -182,5 +182,29 @@ describe("the button to move on", () => {
     expect(nextButton(reveal(), players, 2).label).toBe("Escolher a Palavra");
     expect(nextButton(reveal(), players, 0).label).toBe("Próxima Rodada");
     expect(nextButton(reveal({ chooser: 0 }), players, 1).label).toBe("Ver Resultado");
+  });
+});
+
+describe("the room's limit of tries", () => {
+  test("the limit: a number, null for no limit, 6 from an older server", () => {
+    expect(triesLimit({ maxTries: 9 })).toBe(9);
+    expect(triesLimit({ maxTries: null })).toBe(null);
+    expect(triesLimit({})).toBe(6);
+  });
+
+  test("tries left: counts down, never below 0, null with no limit", () => {
+    expect(triesLeft(9, 2)).toBe(7);
+    expect(triesLeft(6, 6)).toBe(0);
+    expect(triesLeft(6, 7)).toBe(0);
+    expect(triesLeft(null, 30)).toBe(null);
+  });
+
+  test("rows on a board: the limit, or with no limit the rows played (+ the typing one), at least 6", () => {
+    expect(rowsShown(15, 0)).toBe(15);
+    expect(rowsShown(9, 3, true)).toBe(9);
+    expect(rowsShown(null, 0, true)).toBe(6);
+    expect(rowsShown(null, 5, true)).toBe(6);
+    expect(rowsShown(null, 6, true)).toBe(7);
+    expect(rowsShown(null, 11)).toBe(11);
   });
 });
