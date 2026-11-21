@@ -85,10 +85,12 @@
           <span class="orb"><ArrowRight size={16} weight="bold" aria-hidden="true" /></span>
         </button>
       </div>
-      <p id="guess-word-secret-note" class:error={shown} class="note" role={shown ? "alert" : undefined}>
-        {shown || t("guessWord.choose.drawNote")}
-      </p>
-      <p class="count" aria-hidden="true">{word.length}/{max}</p>
+      <div class="below">
+        <p id="guess-word-secret-note" class:error={shown} class="note" role={shown ? "alert" : undefined}>
+          {shown || t("guessWord.choose.drawNote")}
+        </p>
+        <p class="count" aria-hidden="true">{word.length}/{max}</p>
+      </div>
     </form>
   {:else}
     <div class="waiting">
@@ -182,7 +184,18 @@
     border-color: var(--danger);
   }
 
+  /* The note and the letter count share one line; the note wraps instead of
+     running under the count. */
+  .below {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+  }
+
   .note {
+    flex: 1;
+    min-width: 0;
     min-height: 1.4em;
     color: var(--ink-faint);
     font-size: 0.9rem;
@@ -194,8 +207,7 @@
   }
 
   .count {
-    justify-self: end;
-    margin-top: -1.9rem;
+    flex: none;
     font-family: var(--font-mono);
     font-size: 0.8rem;
     color: var(--ink-faint);
@@ -242,13 +254,10 @@
     white-space: nowrap;
   }
 
-  @media (max-width: 380px) {
+  /* Phones: the field and the button are both wide, so they stack. */
+  @media (max-width: 640px) {
     .row {
       flex-direction: column;
-    }
-
-    .count {
-      margin-top: 0;
     }
   }
 
