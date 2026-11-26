@@ -19,6 +19,8 @@
   import OthersProgress from "./OthersProgress.svelte";
   import Timer from "./Timer.svelte";
   import RoundScore from "./RoundScore.svelte";
+  import OpponentBoard from "./OpponentBoard.svelte";
+  import { isDuel, opponentOf, duelStatus, duelHeadline, duelRows } from "./duel.js";
   import { letterStates, keyFromEvent, emptyGuess, fitGuess, guessWord, selectCell, editGuess, revealDelay } from "./keyboardState.js";
   import { outcomeText, nameOf, triesLimit, triesLeft, rowsShown } from "./round.js";
   import { ranking, headline, rematchVote } from "./result.js";
@@ -134,8 +136,10 @@
     if (status === "lobby" && roomCode) rememberRoom({ code: roomCode, gameId: GAME_ID });
   }
 
+  // In a match it only says so: a match cannot be resumed, so the next
+  // connection lands on the menu with the reason (connectDecision: "dropped").
   function handleDisconnect() {
-    if (status === "lobby") reconnecting = true;
+    if (status === "lobby" || status === "playing") reconnecting = true;
   }
 
   const MAX_RESUME_FAILURES = 3;
@@ -220,27 +224,49 @@
     say("");
   }
 
+  // The most greens in any one row of a duel board.
+  const bestGreens = (board) => Math.max(0, ...(board?.rows ?? []).map((r) => r.colors.filter((c) => c === "correct").length));
+
+  // A duel's state: no rounds, one board per seat.
+  function handleDuelState(before, state) {
+    const triesBefore = isDuel(before) ? (before.boards[playerIndex]?.tries ?? 0) : 0;
+    if (!isDuel(before) || (state.boards[playerIndex]?.tries ?? 0) > triesBefore) {
+      guess = emptyGuess(0);
+      pending = false;
+    }
+    // The opponent placed a new letter right: worth a word, but never the letter.
+    const rival = opponentOf(state, playerIndex);
+    if (isDuel(before) && !state.winners && bestGreens(state.boards[rival]) > bestGreens(before.boards[rival])) {
+      say(t("guessWord.duel.greenAlert", { name: seats[rival]?.name ?? t("common.someone") }), 2500);
+    }
+    if (state.winners) {
+      status = "ended";
+      confirmLeave = false;
+    }
+  }
+
   function handleState(state) {
     const before = game;
     game = state;
     if (typeof state.serverNow === "number") offset = state.serverNow - Date.now();
     if (Array.isArray(state.players)) seats = state.players;
+    if (isDuel(state)) return handleDuelState(before, state);
 
     const round = state.round;
-    const newRound = !before || before.round.number !== round.number;
+    const newRound = !before?.round || before.round.number !== round.number;
     if (newRound || round.phase !== "guessing") {
       guess = emptyGuess(0);
       pending = false;
       chooseError = "";
     }
-    const triesBefore = before?.round.number === round.number ? (before.round.players[playerIndex]?.tries ?? 0) : 0;
+    const triesBefore = before?.round?.number === round.number ? (before.round.players[playerIndex]?.tries ?? 0) : 0;
     if ((round.players[playerIndex]?.tries ?? 0) > triesBefore) {
       guess = emptyGuess(0);
       pending = false;
     }
 
     // The chooser left: the round was called off and the next one started.
-    if (before && state.history.length > before.history.length) {
+    if (before?.history && state.history.length > before.history.length) {
       const last = state.history.at(-1);
       if (last.outcome === "cancelled") say(t("guessWord.roundCancelled", { name: seats[last.chooser]?.name ?? t("common.someone") }), 5000);
     }
@@ -263,7 +289,7 @@
     if (lastMove === "next") return;
     const message = serverMessage("move", refusal);
     pending = false;
-    if (game?.round.phase === "choosing" && game.round.chooser === playerIndex) {
+    if (game?.round?.phase === "choosing" && game.round.chooser === playerIndex) {
       chooseError = message;
       return;
     }
@@ -430,16 +456,22 @@
 
   const inRoom = $derived(status === "lobby" || status === "playing" || status === "ended" || status === "joining");
   const inMatch = $derived((status === "playing" || status === "ended") && game !== null);
+  // A duel has no rounds: one word, one board per seat (duel.js).
+  const duel = $derived(isDuel(game));
   const round = $derived(game?.round ?? null);
   const amChooser = $derived(round?.chooser === playerIndex);
-  const mine = $derived(round?.players[playerIndex] ?? { tries: 0, rows: [] });
-  const wordLength = $derived(round?.length ?? 5);
+  const mine = $derived((duel ? game.boards[playerIndex] : round?.players[playerIndex]) ?? { tries: 0, rows: [] });
+  const rival = $derived(duel ? game.boards[opponentOf(game, playerIndex)] : null);
+  const wordLength = $derived((duel ? game.length : round?.length) ?? 5);
   const typing = $derived(fitGuess(guess, wordLength));
   // The room's limit of tries, or null for no limit (DG-150).
   const limit = $derived(triesLimit(game));
   const myTriesLeft = $derived(triesLeft(limit, mine.tries));
   const canGuess = $derived(
-    status === "playing" && round?.phase === "guessing" && !amChooser && myTriesLeft !== 0 && !pending
+    status === "playing" &&
+      myTriesLeft !== 0 &&
+      !pending &&
+      (duel ? !game.winners : round?.phase === "guessing" && !amChooser)
   );
   const keyStates = $derived(letterStates(mine.rows));
   // The keys show a new row's colours only once its tiles have turned over.
@@ -465,7 +497,9 @@
     return () => clearTimeout(timer);
   });
   const phaseSeconds = $derived(
-    round?.phase === "choosing"
+    duel
+      ? (game.roundTime ?? 120)
+      : round?.phase === "choosing"
       ? CHOOSE_SECONDS
       : round?.phase === "reveal"
         ? round.endsAt && round.startedAt
@@ -475,6 +509,7 @@
   );
 
   const statusText = $derived.by(() => {
+    if (duel) return game.winners ? duelHeadline(game, seats, playerIndex).title : duelStatus(game, seats, playerIndex);
     if (!round) return "";
     if (round.phase === "reveal" || round.phase === "over") return round.outcome ? outcomeText(game, seats, playerIndex) : "";
     if (round.phase !== "guessing") return "";
@@ -504,7 +539,10 @@
         <ArrowLeft size={18} weight="light" aria-hidden="true" />
         <span>{confirmLeave ? t("guessWord.leaveMatch") : t("guessWord.leave")}</span>
       </button>
-      {#if inMatch && round && round.phase !== "over"}
+      {#if inMatch && duel}
+        <span class="round-label">{t("guessWord.duel.label")}</span>
+        {#if game.endsAt}<Timer endsAt={game.endsAt} {offset} total={phaseSeconds} />{/if}
+      {:else if inMatch && round && round.phase !== "over"}
         <span class="round-label">{t("guessWord.round.label", { n: round.number, total: game.rounds })}</span>
         <Timer endsAt={round.endsAt} {offset} total={phaseSeconds} />
       {:else if inRoom}
@@ -552,6 +590,38 @@
       onCopyLink={copyInviteLink}
       onLeave={leaveRoom}
     />
+  {:else if inMatch && duel}
+    <section class="match duel">
+      <p class="status-line match-status" class:highlight={canGuess} class:error={moveError} role="status" aria-live="polite">
+        {moveError || (reconnecting ? t("common.reconnecting") : notice || statusText)}
+      </p>
+      <div class="duel-boards">
+        <div class="duel-rival">
+          <OpponentBoard
+            rows={rival?.rows ?? []}
+            length={wordLength}
+            rowCount={game.maxTries}
+            name={seats[rival?.index]?.name ?? t("common.someone")}
+            color={seats[rival?.index]?.color ?? 2}
+            tries={rival?.tries ?? 0}
+            maxTries={game.maxTries}
+          />
+        </div>
+        <div class="duel-mine">
+          <p class="duel-you">{t("guessWord.duel.you")}</p>
+          <Board
+            rows={mine.rows}
+            length={wordLength}
+            guess={typing}
+            rowCount={game.maxTries}
+            active={!game.winners && myTriesLeft !== 0}
+            {shake}
+            onSelect={selectGuessCell}
+          />
+        </div>
+      </div>
+      <Keyboard states={shownKeyStates} disabled={!canGuess} onKey={pressKey} />
+    </section>
   {:else if inMatch}
     <section class="match">
       <p class="status-line match-status" class:highlight={canGuess} class:error={moveError} role="status" aria-live="polite">
@@ -595,8 +665,8 @@
 {#if status === "ended" && game?.winners}
   <ResultSheet
     id="guess-word"
-    head={headline(game, seats, playerIndex)}
-    rows={ranking(game, seats)}
+    head={duel ? duelHeadline(game, seats, playerIndex) : headline(game, seats, playerIndex)}
+    rows={duel ? duelRows(game, seats) : ranking(game, seats)}
     vote={rematchVote(seats, playerIndex)}
     me={playerIndex}
     onPlayAgain={() => socket.emit("playAgain")}
@@ -751,6 +821,55 @@
     overflow: auto;
     padding-top: 0.5rem;
     container-type: size;
+  }
+
+  /* ---- Duel: the opponent's board and yours ----
+     Phones: the opponent's smaller, on top; yours under it, then the keyboard.
+     Wide screens: side by side, the same size. Each board sizes its tiles by
+     the space it is given (size containers in Board and OpponentBoard). */
+  .match.duel {
+    max-width: 980px;
+  }
+
+  .duel-boards {
+    flex: 1 1 0;
+    min-height: 0;
+    width: 100%;
+    display: grid;
+    grid-template-rows: minmax(0, 2fr) minmax(0, 5fr);
+    gap: 0.6rem;
+  }
+
+  .duel-rival,
+  .duel-mine {
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .duel-you {
+    margin: 0;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink-muted);
+  }
+
+  /* On a phone the opponent's name sits on the board's line, to save height. */
+  @media (max-width: 719px) {
+    .duel-you {
+      display: none;
+    }
+  }
+
+  @media (min-width: 720px) {
+    .duel-boards {
+      grid-template-rows: minmax(0, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.5rem;
+    }
   }
 
   @media (max-height: 620px) {
