@@ -3,7 +3,7 @@
 
 export default {
   meta: {
-    description: "Adivinha Palavra: um Wordle em grupo para 2 a 5 jogadores. Um escolhe a palavra secreta e os outros correm para adivinhar. Sem cadastro: mande o código da sala e jogue.",
+    description: "Adivinha Palavra: um Wordle em grupo para 2 a 5 jogadores. Um escolhe a palavra secreta e os outros correm para adivinhar, ou dois jogam um Duelo com uma palavra sorteada. Sem cadastro: mande o código da sala e jogue.",
   },
 
   guessWord: {
@@ -18,7 +18,7 @@ export default {
       { title: "Cada tentativa conta", text: "Quem acerta com menos tentativas marca mais, e quem escolheu marca a cada tentativa que a palavra leva. Vence quem somar mais pontos." },
     ],
     eyebrow: "Wordle em grupo · 2 a 5 jogadores",
-    lede: "A cada rodada, um jogador escolhe uma palavra secreta e os outros correm para adivinhar, com seis tentativas cada. O primeiro acerto encerra a rodada. Todo mundo escolhe uma vez; vence quem fizer mais pontos.",
+    lede: "A cada rodada, um jogador escolhe uma palavra secreta e os outros correm para adivinhar, com seis tentativas cada. O primeiro acerto encerra a rodada. Todo mundo escolhe uma vez; vence quem fizer mais pontos. Ou jogue um Duelo a dois: o jogo sorteia a palavra e vence quem acertar primeiro.",
     leaveMatch: "Sair da Partida?",
     leaveMatchAria: "Sair da partida: toque de novo para confirmar",
     openingRoom: "Abrindo uma sala…",
@@ -47,6 +47,37 @@ export default {
       maxTriesAria: "Tentativas de cada jogador por rodada",
       limitTriesOn: "Limitar tentativas",
       upToTries: "Até {count} tentativas",
+      mode: "Modo de jogo",
+      modeAria: "Modo de jogo: Rodadas ou Duelo",
+      modeRounds: "Rodadas",
+      modeDuel: "Duelo",
+      roundsNote: "De 2 a 5 jogadores. Cada um escolhe uma palavra para os outros adivinharem.",
+      duelNote: "Para 2 jogadores. O jogo sorteia uma palavra e vence quem acertar primeiro.",
+      duelTime: "Tempo do duelo",
+      duelLetters: "Letras da palavra",
+      duelLettersAria: "Número de letras da palavra sorteada",
+      duelTries: "Tentativas",
+      duelTriesAria: "Tentativas de cada jogador no duelo",
+    },
+
+    // Modo Duelo: dois jogadores, uma palavra sorteada, vence quem acertar primeiro.
+    duel: {
+      label: "Duelo",
+      yourTurn: "Acerte antes de {name}: {length} letras.",
+      noTries: "Acabaram suas tentativas. Torça para {name} errar.",
+      opponent: "Tabuleiro de {name}",
+      opponentTries: "{count}/{max}",
+      you: "Você",
+      wordWas: "A palavra era {word}.",
+      youSolved: { one: "Você acertou de primeira.", other: "Você acertou em {count} tentativas." },
+      theySolved: { one: "{name} acertou primeiro, de primeira.", other: "{name} acertou primeiro, em {count} tentativas." },
+      forfeitWin: "{name} saiu, então você venceu por W.O.",
+      forfeitLoss: "Você saiu da partida.",
+      draw: "Empate",
+      drawNoTries: "Acabaram as tentativas dos dois.",
+      drawTimeUp: "O tempo acabou sem acerto.",
+      triesUsed: "{count}/{max}",
+      greenAlert: "{name} acertou uma letra no lugar.",
     },
 
     choose: {
